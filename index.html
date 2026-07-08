@@ -3,7 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Inquiries Tracker</title>
+    <title>Global Team CRM System</title>
+    <!-- Ginamit para sa Excel Export Feature -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     
     <style>
@@ -34,11 +35,6 @@
         .title-area p { color: var(--text-muted); font-size: 0.875rem; margin-top: 0.25rem; }
 
         .controls-panel { display: flex; flex-wrap: wrap; gap: 1rem; align-items: center; }
-        .date-picker-panel { background-color: var(--bg-card); padding: 0.6rem 1.2rem; border-radius: 12px; border: 1px solid var(--accent-blue); display: flex; gap: 1.5rem; align-items: center; }
-        .date-group { display: flex; align-items: center; gap: 0.5rem; }
-        .date-group label { font-size: 0.8rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase; }
-        .date-group input[type="date"] { background-color: var(--bg-input); border: 1px solid var(--border-color); color: #58a6ff; font-weight: 700; font-size: 0.9rem; padding: 0.4rem 0.75rem; border-radius: 6px; outline: none; cursor: pointer; }
-
         .btn-excel { background-color: var(--accent-excel); color: white; border: none; padding: 0.75rem 1.25rem; font-size: 0.9rem; font-weight: 700; border-radius: 12px; cursor: pointer; display: flex; align-items: center; gap: 0.5rem; transition: background 0.2s, transform 0.1s; box-shadow: 0 4px 12px rgba(22, 163, 74, 0.3); }
         .btn-excel:hover { background-color: #15803d; transform: translateY(-1px); }
         .btn-clear-all { background-color: rgba(239, 68, 68, 0.2); color: var(--accent-red); border: 1px solid var(--accent-red); padding: 0.75rem 1.25rem; font-size: 0.9rem; font-weight: 700; border-radius: 12px; cursor: pointer; transition: background 0.2s; }
@@ -85,7 +81,6 @@
         .responsive-table { width: 100%; border-collapse: collapse; text-align: left; font-size: 0.85rem; }
         .responsive-table th { background-color: rgba(51, 65, 85, 0.5); color: var(--text-muted); font-weight: 700; font-size: 0.75rem; text-transform: uppercase; padding: 1rem; border-bottom: 1px solid var(--border-color); white-space: nowrap; }
         .responsive-table td { padding: 0.75rem 1rem; border-bottom: 1px solid var(--border-color); }
-        .responsive-table tbody tr.hidden-row { display: none; }
         
         .source-badge { display: inline-block; padding: 0.25rem 0.5rem; border-radius: 4px; font-size: 0.75rem; font-weight: 700; }
         .source-badge.ads { background-color: rgba(59, 130, 246, 0.15); color: var(--accent-blue); }
@@ -106,30 +101,21 @@
     <div class="container">
         <header>
             <div class="title-area">
-                <h1>INQUIRIES TRACKER (CLOUD) <span id="syncStatus" class="sync-status-indicator">● LIVE CONNECTED</span></h1>
-                <p>REALTIME TRANSPARENCY SYSTEM</p>
+                <h1>TEAM INQUIRIES TRACKER <span id="syncStatus" class="sync-status-indicator">● LIVE CONNECTED</span></h1>
+                <p>SHARED REALTIME SYSTEM SYSTEM — OPEN TO ALL TEAM DEVICES</p>
             </div>
             
             <div class="controls-panel">
-                <div class="date-picker-panel">
-                    <div class="date-group">
-                        <label for="startDate">📅 Start:</label>
-                        <input type="date" id="startDate" value="2026-07-01">
-                    </div>
-                    <div class="date-group">
-                        <label for="endDate">📅 End:</label>
-                        <input type="date" id="endDate" value="2026-07-31">
-                    </div>
-                </div>
-                <button class="btn-excel" onclick="exportToExcel()">📊 Export Tracker to Excel</button>
-                <button class="btn-clear-all" onclick="clearAllTrackerData()">🗑️ Clear All Data</button>
+                <button class="btn-excel" onclick="exportToExcel()">📊 Export System Data to Excel</button>
+                <button class="btn-clear-all" onclick="clearAllTrackerData()">🗑️ Clear Cloud Data</button>
             </div>
         </header>
 
         <div class="forms-container">
+            <!-- Global Campaign Form Panel -->
             <section class="form-panel campaign-panel">
                 <h3>CAMPAIGN INFO</h3>
-                <div class="sub-label">SHARED GLOBALLY ACROSS ALL ACCOUNTS</div>
+                <div class="sub-label">SYNCHRONIZED ON ALL SCREEN DEVICES</div>
                 <div class="form-grid">
                     <div class="input-box">
                         <label>CAMPAIGN NAME:</label>
@@ -140,7 +126,7 @@
                         <label>CAMPAIGN IMAGE / VISUAL:</label>
                         <input type="file" id="campaignImageFile" accept="image/*" onchange="previewCampaignImage(event)">
                         <div class="image-preview-container" id="imagePreviewBox">
-                            <div class="image-preview-placeholder" id="previewPlaceholder">No global image synced yet.</div>
+                            <div class="image-preview-placeholder">No global image synced yet.</div>
                         </div>
                     </div>
 
@@ -149,17 +135,18 @@
                         <input type="number" id="adBudgetSpent" placeholder="0.00" value="0.00" oninput="reflectLiveAdSpend(this.value)">
                     </div>
                     
-                    <button class="btn-save" onclick="updateCampaignData()">Apply & Sync to Everyone</button>
+                    <button class="btn-save" onclick="updateCampaignData()">Apply Changes to Everyone</button>
                 </div>
             </section>
 
+            <!-- Global Entry Logger Panel -->
             <section class="form-panel log-panel">
-                <h3>➕INQUIRIES ENTRY LOGGER</h3>
-                <div class="sub-label">I-encode ang detalye ng kliyente upang mag-sync sa lahat ng computer:</div>
+                <h3>➕ NEW ENTRY LOGGER</h3>
+                <div class="sub-label">Mag-input dito para makita agad sa website ng buong koponan:</div>
                 <div class="form-grid">
                     <div class="input-box">
                         <label>Date</label>
-                        <input type="date" id="insDate" value="2026-07-01">
+                        <input type="date" id="insDate">
                     </div>
                     <div class="input-box">
                         <label>Client Name</label>
@@ -179,8 +166,8 @@
                     <div class="input-box">
                         <label>Deal Status</label>
                         <select id="insStatus">
-                            <option value="DEAL">DEAL (Naka-Order)</option>
                             <option value="PENDING">PENDING</option>
+                            <option value="DEAL">DEAL (Naka-Order)</option>
                         </select>
                     </div>
                     <div class="input-box">
@@ -188,8 +175,14 @@
                         <input type="number" id="insAmount" value="0">
                     </div>
                     <div class="input-box">
-                        <label>👤 Assigned Staff</label>
-                        <input type="text" id="insStaff" value="JESS">
+                        <label>Assigned Staff</label>
+                        <select id="insStaff">
+                            <option value="JESS">JESS</option>
+                            <option value="JHON">JHON</option>
+                            <option value="MARILEN">MARILEN</option>
+                            <option value="MALYN">MALYN</option>
+                            <option value="WILFREDO">WILFREDO</option>
+                        </select>
                     </div>
                     <div></div> 
                     <div class="input-box full-width-input">
@@ -209,6 +202,7 @@
             </section>
         </div>
 
+        <!-- System Scoreboards (Synchronized across all devices) -->
         <section class="kpi-grid">
             <div class="kpi-card blue"><div class="kpi-label">Total Chat</div><div class="kpi-value" id="kpiTotal">0</div></div>
             <div class="kpi-card green"><div class="kpi-label">Ads Chat</div><div class="kpi-value" id="kpiAds">0</div></div>
@@ -218,8 +212,9 @@
             <div class="kpi-card green"><div class="kpi-label">Total Revenue</div><div class="kpi-value" id="kpiRevenue" style="color: #34d399;">₱0.00</div></div>
         </section>
 
+        <!-- Pure Live Web System Table Data -->
         <main class="table-container">
-            <div class="table-header-title">INQUIRIES TRACK SHEET (REALTIME SYNCED)</div>
+            <div class="table-header-title">SYSTEM INQUIRIES SHEET (REALTIME STREAM)</div>
             <div style="overflow-x: auto;">
                 <table class="responsive-table">
                     <thead>
@@ -234,105 +229,89 @@
     </div>
 
     <script>
-        const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbz0Q0g7KC63KqkwEobpqmAZvADPt4GI9Ft48xh_o9a_bLKJVOvnOCR5Rep1Y2h-qQc4IQ/exec";
+        // KAPALITAN: Siguraduhing tugma ito sa iyong Google Web App Script Deployment URL!
+        const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzGYvSgT8HdmbGAf0AGguxG48_kG7XxVojyyj-73gRHA-Eila07YmiBBG3AEZk0GHQX4A/exec";
 
         const tableBody = document.getElementById('tableBody');
         const syncStatus = document.getElementById('syncStatus');
         
-        let globalAdSpend = parseFloat(localStorage.getItem('cached_ad_spend')) || 0;
-        let globalCampaignName = localStorage.getItem('cached_campaign_name') || "";
-        let campaignImageBase64 = localStorage.getItem('cached_campaign_image') || "";
-        let localRecords = JSON.parse(localStorage.getItem('cached_inquiries')) || [];
-        
-        // Anti-overwrite lock state
+        let globalAdSpend = 0;
+        let globalCampaignName = "";
+        let campaignImageBase64 = "";
         let isUserEditingCampaign = false;
 
+        // PURE STREAM LOGIC: Palaging kumukuha sa iisang server data upang sabay na makita sa lahat ng gadgets
         function loadCloudData() {
-            // Kung kasalukuyang nag-e-edit ang user sa campaign box, HUWAG mag-refresh para hindi maglaho ang sinusulat.
-            if (isUserEditingCampaign) {
-                console.log("Auto-sync paused: User is typing in Campaign Info.");
-                return;
-            }
+            if (isUserEditingCampaign) return;
 
-            syncStatus.textContent = "🔄 SYNCING...";
+            syncStatus.textContent = "🔄 SYSTEM SYNCING...";
             syncStatus.style.color = "#fb923c";
-
-            renderAllCombinedData([]);
-            document.getElementById('campaignName').value = globalCampaignName;
-            document.getElementById('adBudgetSpent').value = globalAdSpend;
-            document.getElementById('kpiAdSpend').textContent = "₱" + globalAdSpend.toLocaleString('en-US', {minimumFractionDigits: 2});
-            if (campaignImageBase64) {
-                document.getElementById('imagePreviewBox').innerHTML = `<img src="${campaignImageBase64}">`;
-            }
 
             fetch(SCRIPT_URL)
                 .then(res => res.json())
                 .then(data => {
+                    // Sync ng Global Campaign Data
                     if(data.campaign && !isUserEditingCampaign) {
-                        if(data.campaign.name && data.campaign.name.trim() !== "") {
-                            globalCampaignName = data.campaign.name;
-                            localStorage.setItem('cached_campaign_name', globalCampaignName);
-                        }
+                        globalCampaignName = data.campaign.name || "";
+                        globalAdSpend = parseFloat(data.campaign.adSpend) || 0;
+                        campaignImageBase64 = data.campaign.image || "";
+
                         document.getElementById('campaignName').value = globalCampaignName;
-                        
-                        if(data.campaign.adSpend !== undefined && data.campaign.adSpend !== null) {
-                            globalAdSpend = parseFloat(data.campaign.adSpend) || 0;
-                            localStorage.setItem('cached_ad_spend', globalAdSpend);
-                        }
                         document.getElementById('adBudgetSpent').value = globalAdSpend;
                         document.getElementById('kpiAdSpend').textContent = "₱" + globalAdSpend.toLocaleString('en-US', {minimumFractionDigits: 2});
                         
-                        if(data.campaign.image && data.campaign.image.trim() !== "") {
-                            campaignImageBase64 = data.campaign.image;
-                            localStorage.setItem('cached_campaign_image', campaignImageBase64);
+                        if (campaignImageBase64) {
                             document.getElementById('imagePreviewBox').innerHTML = `<img src="${campaignImageBase64}">`;
+                        } else {
+                            document.getElementById('imagePreviewBox').innerHTML = `<div class="image-preview-placeholder">No global image synced yet.</div>`;
                         }
                     }
                     
+                    // Render ng kabuuang listahan ng system records
                     const cloudRecords = data.records || [];
-                    if (cloudRecords.length > 0) {
-                        const pendingLocal = localRecords.filter(lr => lr.id.toString().startsWith("TEMP-"));
-                        localRecords = [...pendingLocal, ...cloudRecords.filter(cr => !pendingLocal.some(pl => pl.id.toString() === cr.id.toString()))];
-                        localStorage.setItem('cached_inquiries', JSON.stringify(localRecords));
-                    }
-                    
                     renderAllCombinedData(cloudRecords);
+                    
                     syncStatus.textContent = "● LIVE CONNECTED";
                     syncStatus.style.color = "#10b981";
                     
                 }).catch(err => { 
-                    console.log("Network delay shield activated:", err); 
-                    renderAllCombinedData([]);
-                    syncStatus.textContent = "⚠️ RUNNING OFFLINE CACHE";
+                    console.log("System Connection Issue:", err); 
+                    syncStatus.textContent = "⚠️ SYSTEM OFFLINE";
                     syncStatus.style.color = "#ef4444";
                 });
         }
 
         function reflectLiveAdSpend(val) {
-            const num = parseFloat(val) || 0;
-            document.getElementById('kpiAdSpend').textContent = "₱" + num.toLocaleString('en-US', {minimumFractionDigits: 2});
+            globalAdSpend = parseFloat(val) || 0;
+            document.getElementById('kpiAdSpend').textContent = "₱" + globalAdSpend.toLocaleString('en-US', {minimumFractionDigits: 2});
         }
 
-        function renderAllCombinedData(cloudRecords) {
+        function renderAllCombinedData(recordsList) {
             tableBody.innerHTML = "";
-            const cloudIds = cloudRecords.map(r => r.id.toString());
-            const pendingLocal = localRecords.filter(lr => !cloudIds.includes(lr.id.toString()));
+            if (recordsList.length === 0) {
+                tableBody.innerHTML = `<tr><td colspan="11" style="text-align:center; padding:20px; color:var(--text-muted);">No logs found inside the system database.</td></tr>`;
+                calculateKPIs(recordsList);
+                return;
+            }
             
-            const combined = [...pendingLocal, ...cloudRecords];
-            const sortedRecords = combined.sort((a, b) => new Date(b.date) - new Date(a.date));
-            
-            sortedRecords.forEach(record => {
-                renderTableRow(record);
-            });
-            filterDataAndRecalculate();
+            // Auto-sort mula sa pinakabagong gawang entry para pareho ang view ng CP at PC
+            recordsList.sort((a, b) => new Date(b.date) - new Date(a.date));
+            recordsList.forEach(record => renderTableRow(record));
+            calculateKPIs(recordsList);
         }
 
-        // ⏱️ EXTENDED TIMEOUT: Ginawang 30 SECONDS (30000ms) para hindi mawala agad ang data habang nagre-refresh!
         document.addEventListener("DOMContentLoaded", () => {
-            loadCloudData();
-            setInterval(loadCloudData, 30000); 
+            // Default automated placeholder date para sa encoder
+            const now = new Date();
+            const year = now.getFullYear();
+            const month = String(now.getMonth() + 1).padStart(2, '0');
+            document.getElementById('insDate').value = `${year}-${month}-${String(now.getDate()).padStart(2, '0')}`;
 
-            // Track user focus/interaction blocks
+            loadCloudData();
+            
+            // Auto refresh cycle loop (Tuwing 15 segundo, kusa itong titingin sa cloud para sa bagong lagay ng iba)
+            setInterval(loadCloudData, 15000); 
+
             const campInputs = [document.getElementById('campaignName'), document.getElementById('adBudgetSpent')];
             campInputs.forEach(input => {
                 input.addEventListener('focus', () => { isUserEditingCampaign = true; });
@@ -346,7 +325,6 @@
                 const reader = new FileReader();
                 reader.onload = function(e) {
                     campaignImageBase64 = e.target.result;
-                    localStorage.setItem('cached_campaign_image', campaignImageBase64);
                     document.getElementById('imagePreviewBox').innerHTML = `<img src="${campaignImageBase64}">`;
                 }
                 reader.readAsDataURL(file);
@@ -357,31 +335,23 @@
             const name = document.getElementById('campaignName').value.trim();
             const spend = parseFloat(document.getElementById('adBudgetSpent').value) || 0;
             
-            globalCampaignName = name;
-            globalAdSpend = spend;
-            
-            localStorage.setItem('cached_campaign_name', name);
-            localStorage.setItem('cached_ad_spend', spend);
-            
-            filterDataAndRecalculate();
-            syncStatus.textContent = "📤 SYNCING CAMPAIGN INFO...";
-            isUserEditingCampaign = false; // Release lock
+            syncStatus.textContent = "📤 SYNCING CAMPAIGN...";
+            isUserEditingCampaign = false;
 
             fetch(SCRIPT_URL, {
                 method: "POST",
                 body: JSON.stringify({ action: "updateCampaign", name: name, adSpend: spend, image: campaignImageBase64 })
             }).then(() => {
-                alert("Campaign Info successfully locked and synced across all stations!");
                 loadCloudData();
-            }).catch(err => console.log("Campaign sync issue:", err));
+            }).catch(err => console.log("Campaign push error:", err));
         }
 
         function addNewLog() {
             const name = document.getElementById('insName').value.trim();
-            if(!name) { alert("Paki-sulat ang Client Name!"); return; }
+            if(!name) { alert("Paki-sulat ang Client Name bago i-save!"); return; }
             
+            syncStatus.textContent = "📤 UPLOADING TO SYSTEM...";
             const payload = {
-                id: "TEMP-" + Date.now(),
                 date: document.getElementById('insDate').value,
                 clientName: name.toUpperCase(),
                 source: document.getElementById('insSource').value,
@@ -394,14 +364,7 @@
                 followUp: document.getElementById('insFollow').value || 'N/A'
             };
 
-            localRecords.unshift(payload);
-            localStorage.setItem('cached_inquiries', JSON.stringify(localRecords));
-
-            const newRow = createTableRowElement(payload);
-            tableBody.insertBefore(newRow, tableBody.firstChild);
-            
-            filterDataAndRecalculate();
-            
+            // Linisin ang entry boxes ng device na nag-input matapos i-click
             document.getElementById('insName').value = '';
             document.getElementById('insMsg').value = '';
             document.getElementById('insResp').value = '';
@@ -409,134 +372,64 @@
 
             fetch(SCRIPT_URL, { 
                 method: "POST", 
-                body: JSON.stringify({
-                    action: "addLog",
-                    date: payload.date,
-                    clientName: payload.clientName,
-                    source: payload.source,
-                    clothing: payload.clothing,
-                    status: payload.status,
-                    amount: payload.amount,
-                    staff: payload.staff,
-                    clientMsg: payload.clientMsg,
-                    salesResp: payload.salesResp,
-                    followUp: payload.followUp
-                }) 
+                body: JSON.stringify({ action: "addLog", ...payload }) 
             }).then(() => {
-                setTimeout(loadCloudData, 500);
-            }).catch(err => console.log("Log uploaded background process:", err));
+                setTimeout(loadCloudData, 1000);
+            }).catch(err => console.log("System posting error:", err));
         }
 
         function handleInlineChange(id, field, value) {
-            localRecords = localRecords.map(r => r.id.toString() === id.toString() ? {...r, [field]: value} : r);
-            localStorage.setItem('cached_inquiries', JSON.stringify(localRecords));
-
-            const row = document.querySelector(`tr[data-id='${id}']`);
-            const clientName = row ? row.cells[1].innerText : "";
-
-            filterDataAndRecalculate(); 
             fetch(SCRIPT_URL, {
                 method: "POST",
-                body: JSON.stringify({ action: "updateRow", id: id, clientName: clientName, field: field, value: value })
-            }).catch(err => console.log("Inline save background error:", err));
+                body: JSON.stringify({ action: "updateRow", id: id, field: field, value: value })
+            }).then(() => {
+                setTimeout(loadCloudData, 500);
+            }).catch(err => console.log("Inline grid sync issue:", err));
         }
 
         function deleteRow(id) {
-            if(confirm("Sigurado kang buburahin mo ito? Full transparency: Mabubura ito sa lahat ng screen ng team.")) {
-                const row = document.querySelector(`tr[data-id='${id}']`);
-                if(row) row.remove();
-                
-                localRecords = localRecords.filter(r => r.id.toString() !== id.toString());
-                localStorage.setItem('cached_inquiries', JSON.stringify(localRecords));
-                
-                filterDataAndRecalculate();
-
+            if(confirm("Burahin ito sa system cloud data ng buong koponan?")) {
                 fetch(SCRIPT_URL, { method: "POST", body: JSON.stringify({ action: "deleteRow", id: id }) })
-                    .catch(err => console.log("Deletion err:", err));
+                .then(() => loadCloudData());
             }
         }
 
-        function clearAllTrackerData() {
-            if(confirm("DANGER: Sigurado ka bang burahin ang LAHAT ng data sa Cloud? Mawawalan ng kopya ang buong team.")) {
-                tableBody.innerHTML = "";
-                localRecords = [];
-                globalAdSpend = 0;
-                globalCampaignName = "";
-                campaignImageBase64 = "";
-                localStorage.removeItem('cached_inquiries');
-                localStorage.removeItem('cached_ad_spend');
-                localStorage.removeItem('cached_campaign_name');
-                localStorage.removeItem('cached_campaign_image');
-                filterDataAndRecalculate();
-                fetch(SCRIPT_URL, { method: "POST", body: JSON.stringify({ action: "clearAll" }) })
-                    .catch(err => console.log("Clear process executed:", err));
-            }
-        }
-
-        function createTableRowElement(obj) {
+        function renderTableRow(obj) {
             const newRow = document.createElement('tr');
-            newRow.setAttribute('data-id', obj.id);
+            let cleanDate = obj.date ? (obj.date.includes("T") ? obj.date.split("T")[0] : obj.date.substring(0, 10)) : "";
             
-            let cleanDate = "";
-            if (obj.date) {
-                cleanDate = obj.date.toString().includes("T") ? obj.date.split("T")[0] : obj.date.toString().substring(0, 10);
-            }
-            
-            newRow.setAttribute('data-date', cleanDate);
-            newRow.setAttribute('data-source', obj.source);
-            newRow.setAttribute('data-status', obj.status);
-            newRow.setAttribute('data-amount', obj.amount);
-
             const badgeClass = obj.source === 'ADS' ? 'source-badge ads' : 'source-badge organic';
             const pendingStyleClass = obj.status === 'PENDING' ? 'table-select pending-style' : 'table-select';
 
             newRow.innerHTML = `
                 <td>${cleanDate}</td>
-                <td>${obj.clientName}</td>
+                <td style="font-weight:bold;">${obj.clientName}</td>
                 <td><span class="${badgeClass}">${obj.source}</span></td>
                 <td>${obj.clothing}</td>
                 <td><span class="staff-name-text">👤 ${obj.staff}</span></td>
                 <td>
-                    <select class="${pendingStyleClass}" onchange="this.closest('tr').setAttribute('data-status', this.value); handleInlineChange('${obj.id}', 'status', this.value)">
-                        <option value="DEAL" ${obj.status === 'DEAL' ? 'selected' : ''}>🎉 DEAL</option>
+                    <select class="${pendingStyleClass}" onchange="this.className=(this.value==='PENDING'?'table-select pending-style':'table-select'); handleInlineChange('${obj.id}', 'status', this.value)">
                         <option value="PENDING" ${obj.status === 'PENDING' ? 'selected' : ''}>💬 PENDING</option>
+                        <option value="DEAL" ${obj.status === 'DEAL' ? 'selected' : ''}>🎉 DEAL</option>
                     </select>
                 </td>
                 <td>
-                    ₱<input type="number" class="table-amount-input" value="${obj.amount}" onchange="this.closest('tr').setAttribute('data-amount', this.value); handleInlineChange('${obj.id}', 'amount', parseFloat(this.value)||0)">
+                    ₱<input type="number" class="table-amount-input" value="${obj.amount}" onchange="handleInlineChange('${obj.id}', 'amount', parseFloat(this.value)||0)">
                 </td>
                 <td><input type="text" class="table-text-input" value="${obj.clientMsg}" onchange="handleInlineChange('${obj.id}', 'clientMsg', this.value)"></td>
                 <td><input type="text" class="table-text-input" value="${obj.salesResp}" onchange="handleInlineChange('${obj.id}', 'salesResp', this.value)"></td>
                 <td><input type="text" class="table-text-input" value="${obj.followUp}" onchange="handleInlineChange('${obj.id}', 'followUp', this.value)"></td>
                 <td><button class="btn-delete-row" onclick="deleteRow('${obj.id}')">❌</button></td>
             `;
-            return newRow;
+            tableBody.appendChild(newRow);
         }
 
-        function renderTableRow(obj) {
-            const rowEl = createTableRowElement(obj);
-            tableBody.appendChild(rowEl);
-        }
-
-        function filterDataAndRecalculate() {
-            const startValue = document.getElementById('startDate').value;
-            const endValue = document.getElementById('endDate').value;
-            const rows = document.querySelectorAll('#tableBody tr');
-            
-            let total=0, ads=0, organic=0, deals=0, revenue=0;
-
-            rows.forEach(row => {
-                const rDate = row.getAttribute('data-date');
-                if ((!startValue || rDate >= startValue) && (!endValue || rDate <= endValue)) {
-                    row.classList.remove('hidden-row');
-                    total++;
-                    if(row.getAttribute('data-source') === 'ADS') ads++;
-                    if(row.getAttribute('data-source') === 'ORGANIC') organic++;
-                    if(row.getAttribute('data-status') === 'DEAL') { deals++; revenue += parseFloat(row.getAttribute('data-amount')) || 0; }
-                } else {
-                    row.classList.add('hidden-row');
-                }
-            });
+        function calculateKPIs(list) {
+            let total = list.length;
+            let ads = list.filter(r => String(r.source).toUpperCase() === 'ADS').length;
+            let organic = list.filter(r => String(r.source).toUpperCase() === 'ORGANIC').length;
+            let deals = list.filter(r => String(r.status).toUpperCase() === 'DEAL').length;
+            let revenue = list.filter(r => String(r.status).toUpperCase() === 'DEAL').reduce((acc, curr) => acc + (parseFloat(curr.amount) || 0), 0);
 
             document.getElementById('kpiTotal').textContent = total;
             document.getElementById('kpiAds').textContent = ads;
@@ -546,17 +439,14 @@
             document.getElementById('kpiRevenue').textContent = "₱" + revenue.toLocaleString('en-US', {minimumFractionDigits: 2});
         }
 
-        document.getElementById('startDate').addEventListener('change', filterDataAndRecalculate);
-        document.getElementById('endDate').addEventListener('change', filterDataAndRecalculate);
-
         function exportToExcel() {
-            const rows = document.querySelectorAll('#tableBody tr');
             const dataArray = [["Date", "Client Name", "Source Type", "Clothing Type", "Assigned Staff", "Deal Status", "Amount Paid (PHP)", "Client Message", "Sales Response", "Follow-up Note"]];
+            const rows = tableBody.querySelectorAll('tr');
 
             rows.forEach(row => {
-                if (row.classList.contains('hidden-row')) return;
+                if(row.cells.length < 10) return;
                 dataArray.push([
-                    row.cells[0].innerText, row.cells[1].innerText, row.getAttribute('data-source'), row.cells[3].innerText,
+                    row.cells[0].innerText, row.cells[1].innerText, row.cells[2].innerText, row.cells[3].innerText,
                     row.cells[4].innerText.replace('👤', '').trim(), row.cells[5].querySelector('select').value,
                     parseFloat(row.cells[6].querySelector('input').value) || 0, row.cells[7].querySelector('input').value,
                     row.cells[8].querySelector('input').value, row.cells[9].querySelector('input').value
@@ -565,8 +455,15 @@
 
             const worksheet = XLSX.utils.aoa_to_sheet(dataArray);
             const workbook = XLSX.utils.book_new();
-            XLSX.utils.book_append_sheet(workbook, worksheet, "CRM Sheet");
-            XLSX.writeFile(workbook, `CRM_Report.xlsx`);
+            XLSX.utils.book_append_sheet(workbook, worksheet, "System Master Log");
+            XLSX.writeFile(workbook, `CRM_System_Master_Report.xlsx`);
+        }
+
+        function clearAllTrackerData() {
+            if(confirm("⚠️ CRITICAL WARNING: Sigurado ka bang buburahin ang LAHAT ng system records? Mabubura ito sa screen ng lahat ng ka-team mo.")) {
+                fetch(SCRIPT_URL, { method: "POST", body: JSON.stringify({ action: "clearAll" }) })
+                    .then(() => loadCloudData());
+            }
         }
     </script>
 </body>
