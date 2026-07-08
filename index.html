@@ -146,7 +146,7 @@
 
                     <div class="input-box">
                         <label>TOTAL AD BUDGET SPENT:</label>
-                        <input type="number" id="adBudgetSpent" placeholder="0.00" value="0.00">
+                        <input type="number" id="adBudgetSpent" placeholder="0.00" value="0.00" oninput="reflectLiveAdSpend(this.value)">
                     </div>
                     
                     <button class="btn-save" onclick="updateCampaignData()">Apply & Sync to Everyone</button>
@@ -239,8 +239,9 @@
         const tableBody = document.getElementById('tableBody');
         const syncStatus = document.getElementById('syncStatus');
         
-        // 🔒 LOAD CACHED AD SPEND IMMEDIATELY ON REFRESH SO IT NEVER DISAPPEARS/TURNS TO 0
+        // 🔒 INSTANT LOAD REFRESH CODES FOR ALL CAMPAIGN INFOS
         let globalAdSpend = parseFloat(localStorage.getItem('cached_ad_spend')) || 0;
+        let globalCampaignName = localStorage.getItem('cached_campaign_name') || "";
         let campaignImageBase64 = localStorage.getItem('cached_campaign_image') || "";
         let localRecords = JSON.parse(localStorage.getItem('cached_inquiries')) || [];
 
@@ -248,11 +249,11 @@
             syncStatus.textContent = "🔄 SYNCING...";
             syncStatus.style.color = "#fb923c";
 
-            // Render whatever we have in local cache first so UI stays stable
+            // Render current memory elements to guard against loading blank outs
             renderAllCombinedData([]);
-            
-            // Set input field instantly from stable cache storage
+            document.getElementById('campaignName').value = globalCampaignName;
             document.getElementById('adBudgetSpent').value = globalAdSpend;
+            document.getElementById('kpiAdSpend').textContent = "₱" + globalAdSpend.toLocaleString('en-US', {minimumFractionDigits: 2});
             if (campaignImageBase64) {
                 document.getElementById('imagePreviewBox').innerHTML = `<img src="${campaignImageBase64}">`;
             }
@@ -261,12 +262,19 @@
                 .then(res => res.json())
                 .then(data => {
                     if(data.campaign) {
-                        document.getElementById('campaignName').value = data.campaign.name || "";
+                        // Anti-blanking protection layer
+                        if(data.campaign.name && data.campaign.name.trim() !== "") {
+                            globalCampaignName = data.campaign.name;
+                            localStorage.setItem('cached_campaign_name', globalCampaignName);
+                        }
+                        document.getElementById('campaignName').value = globalCampaignName;
                         
-                        // Overwrite cache if cloud returns valid numbers
-                        globalAdSpend = parseFloat(data.campaign.adSpend) || 0;
-                        localStorage.setItem('cached_ad_spend', globalAdSpend);
+                        if(data.campaign.adSpend !== undefined && data.campaign.adSpend !== null) {
+                            globalAdSpend = parseFloat(data.campaign.adSpend) || 0;
+                            localStorage.setItem('cached_ad_spend', globalAdSpend);
+                        }
                         document.getElementById('adBudgetSpent').value = globalAdSpend;
+                        document.getElementById('kpiAdSpend').textContent = "₱" + globalAdSpend.toLocaleString('en-US', {minimumFractionDigits: 2});
                         
                         if(data.campaign.image && data.campaign.image.trim() !== "") {
                             campaignImageBase64 = data.campaign.image;
@@ -276,7 +284,6 @@
                     }
                     
                     const cloudRecords = data.records || [];
-                    
                     if (cloudRecords.length > 0) {
                         const pendingLocal = localRecords.filter(lr => lr.id.toString().startsWith("TEMP-"));
                         localRecords = [...pendingLocal, ...cloudRecords.filter(cr => !pendingLocal.some(pl => pl.id.toString() === cr.id.toString()))];
@@ -288,16 +295,21 @@
                     syncStatus.style.color = "#10b981";
                     
                 }).catch(err => { 
-                    console.log("Network lag, running safely from memory shield:", err); 
+                    console.log("Network delay shield activated:", err); 
                     renderAllCombinedData([]);
                     syncStatus.textContent = "⚠️ RUNNING OFFLINE CACHE";
                     syncStatus.style.color = "#ef4444";
                 });
         }
 
+        // Live updating to card while typing
+        function reflectLiveAdSpend(val) {
+            const num = parseFloat(val) || 0;
+            document.getElementById('kpiAdSpend').textContent = "₱" + num.toLocaleString('en-US', {minimumFractionDigits: 2});
+        }
+
         function renderAllCombinedData(cloudRecords) {
             tableBody.innerHTML = "";
-            
             const cloudIds = cloudRecords.map(r => r.id.toString());
             const pendingLocal = localRecords.filter(lr => !cloudIds.includes(lr.id.toString()));
             
@@ -310,7 +322,7 @@
             filterDataAndRecalculate();
         }
 
-        // ⏱️ SPEED RUN TICKER: Binabasa ang Cloud kada 3 SEGUNDO para sa mabilisang pooling!
+        // ⏱️ Run loop 3 SECONDS auto pool
         document.addEventListener("DOMContentLoaded", () => {
             loadCloudData();
             setInterval(loadCloudData, 3000); 
@@ -330,23 +342,26 @@
         }
 
         function updateCampaignData() {
-            const name = document.getElementById('campaignName').value;
+            const name = document.getElementById('campaignName').value.trim();
             const spend = parseFloat(document.getElementById('adBudgetSpent').value) || 0;
+            
+            globalCampaignName = name;
             globalAdSpend = spend;
             
-            // Lock immediately to memory registry
+            // Lock down instantly to physical memory block
+            localStorage.setItem('cached_campaign_name', name);
             localStorage.setItem('cached_ad_spend', spend);
             
             filterDataAndRecalculate();
-            syncStatus.textContent = "📤 SYNCING CAMPAIGN DATA...";
+            syncStatus.textContent = "📤 SYNCING CAMPAIGN INFO...";
 
             fetch(SCRIPT_URL, {
                 method: "POST",
                 body: JSON.stringify({ action: "updateCampaign", name: name, adSpend: spend, image: campaignImageBase64 })
             }).then(() => {
-                alert("Campaign Visual and Budget Updated globally!");
+                alert("Campaign Info successfully locked and synced across all stations!");
                 loadCloudData();
-            }).catch(err => console.log("Campaign sync error:", err));
+            }).catch(err => console.log("Campaign sync issue:", err));
         }
 
         function addNewLog() {
@@ -397,7 +412,7 @@
                 }) 
             }).then(() => {
                 setTimeout(loadCloudData, 500);
-            }).catch(err => console.log("Cloud logging deferred:", err));
+            }).catch(err => console.log("Log uploaded background process:", err));
         }
 
         function handleInlineChange(id, field, value) {
@@ -411,7 +426,7 @@
             fetch(SCRIPT_URL, {
                 method: "POST",
                 body: JSON.stringify({ action: "updateRow", id: id, clientName: clientName, field: field, value: value })
-            }).catch(err => console.log("Inline edit sync error:", err));
+            }).catch(err => console.log("Inline save background error:", err));
         }
 
         function deleteRow(id) {
@@ -425,7 +440,7 @@
                 filterDataAndRecalculate();
 
                 fetch(SCRIPT_URL, { method: "POST", body: JSON.stringify({ action: "deleteRow", id: id }) })
-                    .catch(err => console.log("Deletion error:", err));
+                    .catch(err => console.log("Deletion err:", err));
             }
         }
 
@@ -434,13 +449,15 @@
                 tableBody.innerHTML = "";
                 localRecords = [];
                 globalAdSpend = 0;
+                globalCampaignName = "";
                 campaignImageBase64 = "";
                 localStorage.removeItem('cached_inquiries');
                 localStorage.removeItem('cached_ad_spend');
+                localStorage.removeItem('cached_campaign_name');
                 localStorage.removeItem('cached_campaign_image');
                 filterDataAndRecalculate();
                 fetch(SCRIPT_URL, { method: "POST", body: JSON.stringify({ action: "clearAll" }) })
-                    .catch(err => console.log("Clear all error:", err));
+                    .catch(err => console.log("Clear process executed:", err));
             }
         }
 
