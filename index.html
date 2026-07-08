@@ -239,17 +239,24 @@
         const tableBody = document.getElementById('tableBody');
         const syncStatus = document.getElementById('syncStatus');
         
-        // 🔒 INSTANT LOAD REFRESH CODES FOR ALL CAMPAIGN INFOS
         let globalAdSpend = parseFloat(localStorage.getItem('cached_ad_spend')) || 0;
         let globalCampaignName = localStorage.getItem('cached_campaign_name') || "";
         let campaignImageBase64 = localStorage.getItem('cached_campaign_image') || "";
         let localRecords = JSON.parse(localStorage.getItem('cached_inquiries')) || [];
+        
+        // Anti-overwrite lock state
+        let isUserEditingCampaign = false;
 
         function loadCloudData() {
+            // Kung kasalukuyang nag-e-edit ang user sa campaign box, HUWAG mag-refresh para hindi maglaho ang sinusulat.
+            if (isUserEditingCampaign) {
+                console.log("Auto-sync paused: User is typing in Campaign Info.");
+                return;
+            }
+
             syncStatus.textContent = "🔄 SYNCING...";
             syncStatus.style.color = "#fb923c";
 
-            // Render current memory elements to guard against loading blank outs
             renderAllCombinedData([]);
             document.getElementById('campaignName').value = globalCampaignName;
             document.getElementById('adBudgetSpent').value = globalAdSpend;
@@ -261,8 +268,7 @@
             fetch(SCRIPT_URL)
                 .then(res => res.json())
                 .then(data => {
-                    if(data.campaign) {
-                        // Anti-blanking protection layer
+                    if(data.campaign && !isUserEditingCampaign) {
                         if(data.campaign.name && data.campaign.name.trim() !== "") {
                             globalCampaignName = data.campaign.name;
                             localStorage.setItem('cached_campaign_name', globalCampaignName);
@@ -302,7 +308,6 @@
                 });
         }
 
-        // Live updating to card while typing
         function reflectLiveAdSpend(val) {
             const num = parseFloat(val) || 0;
             document.getElementById('kpiAdSpend').textContent = "₱" + num.toLocaleString('en-US', {minimumFractionDigits: 2});
@@ -322,10 +327,17 @@
             filterDataAndRecalculate();
         }
 
-        // ⏱️ Run loop 3 SECONDS auto pool
+        // ⏱️ EXTENDED TIMEOUT: Ginawang 30 SECONDS (30000ms) para hindi mawala agad ang data habang nagre-refresh!
         document.addEventListener("DOMContentLoaded", () => {
             loadCloudData();
-            setInterval(loadCloudData, 3000); 
+            setInterval(loadCloudData, 30000); 
+
+            // Track user focus/interaction blocks
+            const campInputs = [document.getElementById('campaignName'), document.getElementById('adBudgetSpent')];
+            campInputs.forEach(input => {
+                input.addEventListener('focus', () => { isUserEditingCampaign = true; });
+                input.addEventListener('blur', () => { isUserEditingCampaign = false; });
+            });
         });
 
         function previewCampaignImage(event) {
@@ -348,12 +360,12 @@
             globalCampaignName = name;
             globalAdSpend = spend;
             
-            // Lock down instantly to physical memory block
             localStorage.setItem('cached_campaign_name', name);
             localStorage.setItem('cached_ad_spend', spend);
             
             filterDataAndRecalculate();
             syncStatus.textContent = "📤 SYNCING CAMPAIGN INFO...";
+            isUserEditingCampaign = false; // Release lock
 
             fetch(SCRIPT_URL, {
                 method: "POST",
