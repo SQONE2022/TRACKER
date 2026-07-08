@@ -1,0 +1,519 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Inquiries Tracker (Google Sheets Cloud)</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    
+    <style>
+        :root {
+            --bg-main: #0f172a;       
+            --bg-card: #1e293b;       
+            --bg-input: #334155;      
+            --border-color: #475569;  
+            --text-main: #ffffff;     
+            --text-muted: #94a3b8;    
+            --accent-blue: #3b82f6;   
+            --accent-green: #10b981;  
+            --accent-teal: #14b8a6;
+            --accent-purple: #a855f7;
+            --accent-orange: #f97316;
+            --accent-red: #ef4444;    
+            --accent-excel: #16a34a; 
+            --font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, sans-serif;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { background-color: var(--bg-main); color: var(--text-main); font-family: var(--font-family); padding: 2rem 1.5rem; min-height: 100vh; }
+        .container { max-width: 1600px; margin: 0 auto; }
+
+        header { display: flex; flex-direction: column; gap: 1.5rem; margin-bottom: 2rem; border-bottom: 1px solid var(--border-color); padding-bottom: 1.5rem; }
+        @media (min-width: 768px) { header { flex-direction: row; justify-content: space-between; align-items: center; } }
+        .title-area h1 { font-size: 1.75rem; font-weight: 700; letter-spacing: -0.025em; }
+        .title-area p { color: var(--text-muted); font-size: 0.875rem; margin-top: 0.25rem; }
+
+        .controls-panel { display: flex; flex-wrap: wrap; gap: 1rem; align-items: center; }
+        .date-picker-panel { background-color: var(--bg-card); padding: 0.6rem 1.2rem; border-radius: 12px; border: 1px solid var(--accent-blue); display: flex; gap: 1.5rem; align-items: center; }
+        .date-group { display: flex; align-items: center; gap: 0.5rem; }
+        .date-group label { font-size: 0.8rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase; }
+        .date-group input[type="date"] { background-color: var(--bg-input); border: 1px solid var(--border-color); color: #58a6ff; font-weight: 700; font-size: 0.9rem; padding: 0.4rem 0.75rem; border-radius: 6px; outline: none; cursor: pointer; }
+
+        .btn-excel { background-color: var(--accent-excel); color: white; border: none; padding: 0.75rem 1.25rem; font-size: 0.9rem; font-weight: 700; border-radius: 12px; cursor: pointer; display: flex; align-items: center; gap: 0.5rem; transition: background 0.2s, transform 0.1s; box-shadow: 0 4px 12px rgba(22, 163, 74, 0.3); }
+        .btn-excel:hover { background-color: #15803d; transform: translateY(-1px); }
+        .btn-clear-all { background-color: rgba(239, 68, 68, 0.2); color: var(--accent-red); border: 1px solid var(--accent-red); padding: 0.75rem 1.25rem; font-size: 0.9rem; font-weight: 700; border-radius: 12px; cursor: pointer; transition: background 0.2s; }
+        .btn-clear-all:hover { background-color: var(--accent-red); color: white; }
+
+        .forms-container { display: grid; grid-template-columns: 1fr; gap: 1.5rem; margin-bottom: 2rem; }
+        @media (min-width: 1024px) { .forms-container { grid-template-columns: 1fr 2.5fr; } }
+        .form-panel { background-color: var(--bg-card); border: 1px solid var(--border-color); border-radius: 12px; padding: 1.5rem; }
+        .form-panel h3 { font-size: 1.1rem; margin-bottom: 0.5rem; text-transform: uppercase; letter-spacing: 0.05em; }
+        .form-panel .sub-label { font-size: 0.85rem; color: var(--text-muted); margin-bottom: 1.25rem; font-style: italic; }
+        .campaign-panel h3 { color: var(--accent-orange); }
+        .log-panel h3 { color: var(--accent-blue); }
+
+        .form-grid { display: grid; grid-template-columns: 1fr; gap: 1rem; }
+        @media (min-width: 640px) { .log-panel .form-grid { grid-template-columns: repeat(2, 1fr); } .log-panel .full-width-input { grid-column: span 2; } }
+        .input-box { display: flex; flex-direction: column; gap: 0.4rem; }
+        .input-box label { font-size: 0.8rem; font-weight: 700; color: var(--text-muted); }
+        .form-panel input, .form-panel select { background-color: var(--bg-input); border: 1px solid var(--border-color); color: white; padding: 0.6rem 0.75rem; border-radius: 6px; outline: none; font-size: 0.9rem; }
+
+        .image-preview-container { width: 100%; height: 120px; border: 2px dashed var(--border-color); border-radius: 6px; display: flex; align-items: center; justify-content: center; background-color: rgba(15, 23, 42, 0.4); overflow: hidden; position: relative; margin-top: 0.25rem; }
+        .image-preview-container img { width: 100%; height: 100%; object-fit: contain; }
+        .image-preview-placeholder { color: var(--text-muted); font-size: 0.8rem; text-align: center; padding: 0.5rem; }
+
+        .btn-add, .btn-save { color: white; border: none; padding: 0.75rem 1.25rem; font-weight: 700; border-radius: 6px; cursor: pointer; transition: background-color 0.2s; margin-top: 0.5rem; }
+        .btn-add { background-color: var(--accent-blue); width: 100%; grid-column: span 1; }
+        @media (min-width: 640px) { .btn-add { grid-column: span 2; } }
+        .btn-save { background-color: var(--accent-orange); width: 100%; box-shadow: 0 4px 6px rgba(249, 115, 22, 0.2); }
+
+        .kpi-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 1rem; margin-bottom: 2rem; }
+        @media (min-width: 768px) { .kpi-grid { grid-template-columns: repeat(3, 1fr); } }
+        @media (min-width: 1200px) { .kpi-grid { grid-template-columns: repeat(6, 1fr); } }
+        .kpi-card { background-color: var(--bg-card); border-radius: 12px; padding: 1.25rem; border: 1px solid var(--border-color); position: relative; }
+        .kpi-card::before { content: ''; position: absolute; top: 0; left: 0; bottom: 0; width: 4px; }
+        .kpi-card.blue::before { background-color: var(--accent-blue); }
+        .kpi-card.green::before { background-color: var(--accent-green); }
+        .kpi-card.teal::before { background-color: var(--accent-teal); }
+        .kpi-card.orange::before { background-color: var(--accent-orange); }
+        .kpi-card.purple::before { background-color: var(--accent-purple); }
+        .kpi-label { color: var(--text-muted); font-size: 0.75rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; }
+        .kpi-value { font-size: 1.5rem; font-weight: 700; margin-top: 0.5rem; word-break: break-all; }
+
+        .table-container { background-color: var(--bg-card); border-radius: 12px; border: 1px solid var(--border-color); overflow: hidden; }
+        .table-header-title { padding: 1.25rem 1.5rem; font-size: 1.1rem; font-weight: 700; border-bottom: 1px solid var(--border-color); }
+        .responsive-table { width: 100%; border-collapse: collapse; text-align: left; font-size: 0.85rem; }
+        .responsive-table th { background-color: rgba(51, 65, 85, 0.5); color: var(--text-muted); font-weight: 700; font-size: 0.75rem; text-transform: uppercase; padding: 1rem; border-bottom: 1px solid var(--border-color); white-space: nowrap; }
+        .responsive-table td { padding: 0.75rem 1rem; border-bottom: 1px solid var(--border-color); }
+        .responsive-table tbody tr.hidden-row { display: none; }
+        
+        .source-badge { display: inline-block; padding: 0.25rem 0.5rem; border-radius: 4px; font-size: 0.75rem; font-weight: 700; }
+        .source-badge.ads { background-color: rgba(59, 130, 246, 0.15); color: var(--accent-blue); }
+        .source-badge.organic { background-color: rgba(16, 119, 81, 0.15); color: var(--accent-green); }
+        .table-select { background-color: #0f172a; color: #34d399; border: 1px solid #10b981; padding: 0.3rem 0.5rem; border-radius: 4px; font-size: 0.75rem; font-weight: 700; cursor: pointer; outline: none; }
+        .table-select.pending-style { color: #fb923c; border-color: var(--accent-orange); }
+        .staff-name-text { color: var(--accent-purple); font-weight: 700; font-size: 0.85rem; white-space: nowrap; }
+        .table-text-input { background-color: #0f172a; color: #f1f5f9; border: 1px solid transparent; padding: 0.4rem; border-radius: 4px; font-size: 0.8rem; width: 100%; min-width: 140px; outline: none; }
+        .table-text-input:focus { border-color: var(--accent-blue); background-color: var(--bg-input); }
+        .table-amount-input { background-color: #0f172a; color: white; border: 1px solid var(--border-color); padding: 0.3rem 0.5rem; border-radius: 4px; font-size: 0.8rem; width: 85px; outline: none; }
+        .btn-delete-row { background-color: transparent; color: var(--accent-red); border: 1px solid var(--accent-red); padding: 0.25rem 0.5rem; border-radius: 4px; cursor: pointer; font-weight: bold; font-size: 0.75rem; }
+        .btn-delete-row:hover { background-color: var(--accent-red); color: white; }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <header>
+            <div class="title-area">
+                <h1>INQUIRIES TRACKER (CLOUD)</h1>
+                <p>GOOGLE SHEETS RE-SYNC SYSTEM</p>
+            </div>
+            
+            <div class="controls-panel">
+                <div class="date-picker-panel">
+                    <div class="date-group">
+                        <label for="startDate">📅 Start:</label>
+                        <input type="date" id="startDate" value="2026-07-01">
+                    </div>
+                    <div class="date-group">
+                        <label for="endDate">📅 End:</label>
+                        <input type="date" id="endDate" value="2026-07-31">
+                    </div>
+                </div>
+                <button class="btn-excel" onclick="exportToExcel()">📊 Export Tracker to Excel</button>
+                <button class="btn-clear-all" onclick="clearAllTrackerData()">🗑️ Clear All Data</button>
+            </div>
+        </header>
+
+        <div class="forms-container">
+            <section class="form-panel campaign-panel">
+                <h3>CAMPAIGN INFO</h3>
+                <div class="sub-label">MANUAL INPUT</div>
+                <div class="form-grid">
+                    <div class="input-box">
+                        <label>CAMPAIGN NAME:</label>
+                        <input type="text" id="campaignName" placeholder="e.g. Clearance Shirt Sale">
+                    </div>
+                    
+                    <div class="input-box">
+                        <label>CAMPAIGN IMAGE / VISUAL:</label>
+                        <input type="file" id="campaignImageFile" accept="image/*" onchange="previewCampaignImage(event)">
+                        <div class="image-preview-container" id="imagePreviewBox">
+                            <div class="image-preview-placeholder" id="previewPlaceholder">Image Uploaded here will stay on refresh.</div>
+                        </div>
+                    </div>
+
+                    <div class="input-box">
+                        <label>TOTAL AD BUDGET SPENT:</label>
+                        <input type="number" id="adBudgetSpent" placeholder="0.00" value="0.00">
+                    </div>
+                    
+                    <button class="btn-save" onclick="updateCampaignData()">Apply & Update</button>
+                </div>
+            </section>
+
+            <section class="form-panel log-panel">
+                <h3>➕INQUIRIES ENTRY LOGGER</h3>
+                <div class="sub-label">I-encode ang detalye ng kliyente upang mag-sync sa lahat ng computer:</div>
+                <div class="form-grid">
+                    <div class="input-box">
+                        <label>Date</label>
+                        <input type="date" id="insDate" value="2026-07-01">
+                    </div>
+                    <div class="input-box">
+                        <label>Client Name</label>
+                        <input type="text" id="insName" placeholder="Juan Dela Cruz">
+                    </div>
+                    <div class="input-box">
+                        <label>Source Type</label>
+                        <select id="insSource">
+                            <option value="ADS">ADS</option>
+                            <option value="ORGANIC">ORGANIC</option>
+                        </select>
+                    </div>
+                    <div class="input-box">
+                        <label>Clothing Type</label>
+                        <input type="text" id="insClothing" placeholder="e.g. T-Shirt / Hoodie">
+                    </div>
+                    <div class="input-box">
+                        <label>Deal Status</label>
+                        <select id="insStatus">
+                            <option value="DEAL">DEAL (Naka-Order)</option>
+                            <option value="PENDING">PENDING</option>
+                        </select>
+                    </div>
+                    <div class="input-box">
+                        <label>Deal Amount (₱)</label>
+                        <input type="number" id="insAmount" value="0">
+                    </div>
+                    <div class="input-box">
+                        <label>👤 Assigned Staff</label>
+                        <input type="text" id="insStaff" value="JESS">
+                    </div>
+                    <div></div> 
+                    <div class="input-box full-width-input">
+                        <label>Client Message</label>
+                        <input type="text" id="insMsg" placeholder="e.g. Pa-order po ng 10pcs T-Shirt">
+                    </div>
+                    <div class="input-box full-width-input">
+                        <label>Sales Response</label>
+                        <input type="text" id="insResp" placeholder="e.g. Noted po! Sent invoice sheet">
+                    </div>
+                    <div class="input-box full-width-input">
+                        <label>Follow-up Message (If Needed)</label>
+                        <input type="text" id="insFollow" placeholder="Isulat dito kung may follow up chat">
+                    </div>
+                    <button class="btn-add" onclick="addNewLog()">Add Entry</button>
+                </div>
+            </section>
+        </div>
+
+        <section class="kpi-grid">
+            <div class="kpi-card blue"><div class="kpi-label">Total Chat</div><div class="kpi-value" id="kpiTotal">0</div></div>
+            <div class="kpi-card green"><div class="kpi-label">Ads Chat</div><div class="kpi-value" id="kpiAds">0</div></div>
+            <div class="kpi-card teal"><div class="kpi-label">Organic Chat</div><div class="kpi-value" id="kpiOrganic">0</div></div>
+            <div class="kpi-card orange"><div class="kpi-label">Total Ad Spend</div><div class="kpi-value" id="kpiAdSpend">₱0.00</div></div>
+            <div class="kpi-card purple"><div class="kpi-label">Total Deals</div><div class="kpi-value" id="kpiDealsCount">0</div></div>
+            <div class="kpi-card green"><div class="kpi-label">Total Revenue</div><div class="kpi-value" id="kpiRevenue" style="color: #34d399;">₱0.00</div></div>
+        </section>
+
+        <main class="table-container">
+            <div class="table-header-title">INQUIRIES TRACK SHEET (REALTIME SYNCED)</div>
+            <div style="overflow-x: auto;">
+                <table class="responsive-table">
+                    <thead>
+                        <tr>
+                            <th>Date</th><th>Client Name</th><th>Source</th><th>Clothing Type</th><th>Assigned Staff</th><th>Status</th><th>Amount</th><th>Client Message</th><th>Sales Response</th><th>Follow-up Message</th><th>Action</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tableBody"></tbody>
+                </table>
+            </div>
+        </main>
+    </div>
+
+    <script>
+        const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzGYvSgT8HdmbGAf0AGguxG48_kG7XxVojyyj-73gRHA-Eila07YmiBBG3AEZk0GHQX4A/exec";
+
+        const tableBody = document.getElementById('tableBody');
+        let globalAdSpend = 0;
+        let campaignImageBase64 = "";
+        
+        // Load whatever exists in local caching IMMEDIATELY to avoid 0 counts or blank rows on refresh
+        let localRecords = JSON.parse(localStorage.getItem('cached_inquiries')) || [];
+
+        function loadCloudData() {
+            // Step 1: Render localized records immediately so data never blinks out of existence
+            renderAllCombinedData([]);
+
+            // Step 2: Fetch cloud records and merge dynamically without overriding new staff entries
+            fetch(SCRIPT_URL)
+                .then(res => res.json())
+                .then(data => {
+                    if(data.campaign) {
+                        document.getElementById('campaignName').value = data.campaign.name || "";
+                        globalAdSpend = parseFloat(data.campaign.adSpend) || 0;
+                        document.getElementById('adBudgetSpent').value = globalAdSpend;
+                        if(data.campaign.image) {
+                            campaignImageBase64 = data.campaign.image;
+                            document.getElementById('imagePreviewBox').innerHTML = `<img src="${campaignImageBase64}">`;
+                        }
+                    }
+                    
+                    const cloudRecords = data.records || [];
+                    
+                    // Merge master cloud records into local system and update cache for consistency
+                    if (cloudRecords.length > 0) {
+                        // Keep track of unsynced temporary logs
+                        const pendingLocal = localRecords.filter(lr => lr.id.toString().startsWith("TEMP-"));
+                        
+                        // Replace state with fresh data from sheet + active local temporary rows
+                        localRecords = [...pendingLocal, ...cloudRecords.filter(cr => !pendingLocal.some(pl => pl.id.toString() === cr.id.toString()))];
+                        localStorage.setItem('cached_inquiries', JSON.stringify(localRecords));
+                    }
+                    
+                    renderAllCombinedData(cloudRecords);
+                    
+                }).catch(err => { 
+                    console.log("Network fetching deferred, serving data directly via stable cache storage:", err); 
+                    renderAllCombinedData([]);
+                });
+        }
+
+        function renderAllCombinedData(cloudRecords) {
+            tableBody.innerHTML = "";
+            
+            const cloudIds = cloudRecords.map(r => r.id.toString());
+            const pendingLocal = localRecords.filter(lr => !cloudIds.includes(lr.id.toString()));
+            
+            const combined = [...pendingLocal, ...cloudRecords];
+            
+            // Sort by Date descending (Newest first)
+            const sortedRecords = combined.sort((a, b) => new Date(b.date) - new Date(a.date));
+            
+            sortedRecords.forEach(record => {
+                renderTableRow(record);
+            });
+            filterDataAndRecalculate();
+        }
+
+        document.addEventListener("DOMContentLoaded", loadCloudData);
+
+        function previewCampaignImage(event) {
+            const file = event.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    campaignImageBase64 = e.target.result;
+                    document.getElementById('imagePreviewBox').innerHTML = `<img src="${campaignImageBase64}">`;
+                }
+                reader.readAsDataURL(file);
+            }
+        }
+
+        function updateCampaignData() {
+            const name = document.getElementById('campaignName').value;
+            const spend = parseFloat(document.getElementById('adBudgetSpent').value) || 0;
+            globalAdSpend = spend;
+            
+            filterDataAndRecalculate();
+            alert("Campaign settings saved locally! Syncing to Google Sheets...");
+
+            fetch(SCRIPT_URL, {
+                method: "POST",
+                body: JSON.stringify({ action: "updateCampaign", name: name, adSpend: spend, image: campaignImageBase64 })
+            }).catch(err => console.log("Campaign sync error:", err));
+        }
+
+        function addNewLog() {
+            const name = document.getElementById('insName').value.trim();
+            if(!name) { alert("Paki-sulat ang Client Name!"); return; }
+            
+            const payload = {
+                id: "TEMP-" + Date.now(),
+                date: document.getElementById('insDate').value,
+                clientName: name.toUpperCase(),
+                source: document.getElementById('insSource').value,
+                clothing: document.getElementById('insClothing').value.toUpperCase() || 'N/A',
+                status: document.getElementById('insStatus').value,
+                amount: parseFloat(document.getElementById('insAmount').value) || 0,
+                staff: document.getElementById('insStaff').value.toUpperCase(),
+                clientMsg: document.getElementById('insMsg').value || 'N/A',
+                salesResp: document.getElementById('insResp').value || 'N/A',
+                followUp: document.getElementById('insFollow').value || 'N/A'
+            };
+
+            // Push to local storage instantly to guarantee it survives refreshes
+            localRecords.unshift(payload);
+            localStorage.setItem('cached_inquiries', JSON.stringify(localRecords));
+
+            // Prepend element directly to the table view
+            const newRow = createTableRowElement(payload);
+            tableBody.insertBefore(newRow, tableBody.firstChild);
+            
+            filterDataAndRecalculate();
+            
+            document.getElementById('insName').value = '';
+            document.getElementById('insMsg').value = '';
+            document.getElementById('insResp').value = '';
+            document.getElementById('insFollow').value = '';
+
+            fetch(SCRIPT_URL, { 
+                method: "POST", 
+                body: JSON.stringify({
+                    action: "addLog",
+                    date: payload.date,
+                    clientName: payload.clientName,
+                    source: payload.source,
+                    clothing: payload.clothing,
+                    status: payload.status,
+                    amount: payload.amount,
+                    staff: payload.staff,
+                    clientMsg: payload.clientMsg,
+                    salesResp: payload.salesResp,
+                    followUp: payload.followUp
+                }) 
+            }).then(() => {
+                // Keep the record but strip out the temp flag once the cloud repository holds it
+                setTimeout(loadCloudData, 800);
+            }).catch(err => console.log("Cloud background update deferred:", err));
+        }
+
+        function handleInlineChange(id, field, value) {
+            localRecords = localRecords.map(r => r.id.toString() === id.toString() ? {...r, [field]: value} : r);
+            localStorage.setItem('cached_inquiries', JSON.stringify(localRecords));
+
+            const row = document.querySelector(`tr[data-id='${id}']`);
+            const clientName = row ? row.cells[1].innerText : "";
+
+            filterDataAndRecalculate(); 
+            fetch(SCRIPT_URL, {
+                method: "POST",
+                body: JSON.stringify({ action: "updateRow", id: id, clientName: clientName, field: field, value: value })
+            }).catch(err => console.log("Inline edit sync error:", err));
+        }
+
+        function deleteRow(id) {
+            if(confirm("Sigurado kang buburahin mo ito?")) {
+                const row = document.querySelector(`tr[data-id='${id}']`);
+                if(row) row.remove();
+                
+                localRecords = localRecords.filter(r => r.id.toString() !== id.toString());
+                localStorage.setItem('cached_inquiries', JSON.stringify(localRecords));
+                
+                filterDataAndRecalculate();
+
+                fetch(SCRIPT_URL, { method: "POST", body: JSON.stringify({ action: "deleteRow", id: id }) })
+                    .catch(err => console.log("Deletion error:", err));
+            }
+        }
+
+        function clearAllTrackerData() {
+            if(confirm("Burahin ang lahat ng entries sa Cloud at Local Storage?")) {
+                tableBody.innerHTML = "";
+                localRecords = [];
+                localStorage.removeItem('cached_inquiries');
+                filterDataAndRecalculate();
+                fetch(SCRIPT_URL, { method: "POST", body: JSON.stringify({ action: "clearAll" }) })
+                    .catch(err => console.log("Clear all error:", err));
+            }
+        }
+
+        function createTableRowElement(obj) {
+            const newRow = document.createElement('tr');
+            newRow.setAttribute('data-id', obj.id);
+            
+            let cleanDate = "";
+            if (obj.date) {
+                cleanDate = obj.date.toString().includes("T") ? obj.date.split("T")[0] : obj.date.toString().substring(0, 10);
+            }
+            
+            newRow.setAttribute('data-date', cleanDate);
+            newRow.setAttribute('data-source', obj.source);
+            newRow.setAttribute('data-status', obj.status);
+            newRow.setAttribute('data-amount', obj.amount);
+
+            const badgeClass = obj.source === 'ADS' ? 'source-badge ads' : 'source-badge organic';
+            const pendingStyleClass = obj.status === 'PENDING' ? 'table-select pending-style' : 'table-select';
+
+            newRow.innerHTML = `
+                <td>${cleanDate}</td>
+                <td>${obj.clientName}</td>
+                <td><span class="${badgeClass}">${obj.source}</span></td>
+                <td>${obj.clothing}</td>
+                <td><span class="staff-name-text">👤 ${obj.staff}</span></td>
+                <td>
+                    <select class="${pendingStyleClass}" onchange="this.closest('tr').setAttribute('data-status', this.value); handleInlineChange('${obj.id}', 'status', this.value)">
+                        <option value="DEAL" ${obj.status === 'DEAL' ? 'selected' : ''}>🎉 DEAL</option>
+                        <option value="PENDING" ${obj.status === 'PENDING' ? 'selected' : ''}>💬 PENDING</option>
+                    </select>
+                </td>
+                <td>
+                    ₱<input type="number" class="table-amount-input" value="${obj.amount}" onchange="this.closest('tr').setAttribute('data-amount', this.value); handleInlineChange('${obj.id}', 'amount', parseFloat(this.value)||0)">
+                </td>
+                <td><input type="text" class="table-text-input" value="${obj.clientMsg}" onchange="handleInlineChange('${obj.id}', 'clientMsg', this.value)"></td>
+                <td><input type="text" class="table-text-input" value="${obj.salesResp}" onchange="handleInlineChange('${obj.id}', 'salesResp', this.value)"></td>
+                <td><input type="text" class="table-text-input" value="${obj.followUp}" onchange="handleInlineChange('${obj.id}', 'followUp', this.value)"></td>
+                <td><button class="btn-delete-row" onclick="deleteRow('${obj.id}')">❌</button></td>
+            `;
+            return newRow;
+        }
+
+        function renderTableRow(obj) {
+            const rowEl = createTableRowElement(obj);
+            tableBody.appendChild(rowEl);
+        }
+
+        function filterDataAndRecalculate() {
+            const startValue = document.getElementById('startDate').value;
+            const endValue = document.getElementById('endDate').value;
+            const rows = document.querySelectorAll('#tableBody tr');
+            
+            let total=0, ads=0, organic=0, deals=0, revenue=0;
+
+            rows.forEach(row => {
+                const rDate = row.getAttribute('data-date');
+                if ((!startValue || rDate >= startValue) && (!endValue || rDate <= endValue)) {
+                    row.classList.remove('hidden-row');
+                    total++;
+                    if(row.getAttribute('data-source') === 'ADS') ads++;
+                    if(row.getAttribute('data-source') === 'ORGANIC') organic++;
+                    if(row.getAttribute('data-status') === 'DEAL') { deals++; revenue += parseFloat(row.getAttribute('data-amount')) || 0; }
+                } else {
+                    row.classList.add('hidden-row');
+                }
+            });
+
+            document.getElementById('kpiTotal').textContent = total;
+            document.getElementById('kpiAds').textContent = ads;
+            document.getElementById('kpiOrganic').textContent = organic;
+            document.getElementById('kpiDealsCount').textContent = deals;
+            document.getElementById('kpiAdSpend').textContent = "₱" + globalAdSpend.toLocaleString('en-US', {minimumFractionDigits: 2});
+            document.getElementById('kpiRevenue').textContent = "₱" + revenue.toLocaleString('en-US', {minimumFractionDigits: 2});
+        }
+
+        document.getElementById('startDate').addEventListener('change', filterDataAndRecalculate);
+        document.getElementById('endDate').addEventListener('change', filterDataAndRecalculate);
+
+        function exportToExcel() {
+            const rows = document.querySelectorAll('#tableBody tr');
+            const dataArray = [["Date", "Client Name", "Source Type", "Clothing Type", "Assigned Staff", "Deal Status", "Amount Paid (PHP)", "Client Message", "Sales Response", "Follow-up Note"]];
+
+            rows.forEach(row => {
+                if (row.classList.contains('hidden-row')) return;
+                dataArray.push([
+                    row.cells[0].innerText, row.cells[1].innerText, row.getAttribute('data-source'), row.cells[3].innerText,
+                    row.cells[4].innerText.replace('👤', '').trim(), row.cells[5].querySelector('select').value,
+                    parseFloat(row.cells[6].querySelector('input').value) || 0, row.cells[7].querySelector('input').value,
+                    row.cells[8].querySelector('input').value, row.cells[9].querySelector('input').value
+                ]);
+            });
+
+            const worksheet = XLSX.utils.aoa_to_sheet(dataArray);
+            const workbook = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(workbook, worksheet, "CRM Sheet");
+            XLSX.writeFile(workbook, `CRM_Report.xlsx`);
+        }
+    </script>
+</body>
+</html>
