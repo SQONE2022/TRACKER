@@ -238,37 +238,45 @@
 
         const tableBody = document.getElementById('tableBody');
         const syncStatus = document.getElementById('syncStatus');
-        let globalAdSpend = 0;
-        let campaignImageBase64 = "";
         
+        // 🔒 LOAD CACHED AD SPEND IMMEDIATELY ON REFRESH SO IT NEVER DISAPPEARS/TURNS TO 0
+        let globalAdSpend = parseFloat(localStorage.getItem('cached_ad_spend')) || 0;
+        let campaignImageBase64 = localStorage.getItem('cached_campaign_image') || "";
         let localRecords = JSON.parse(localStorage.getItem('cached_inquiries')) || [];
 
         function loadCloudData() {
-            syncStatus.textContent = "🔄 SYNCING CLOUD REPO...";
+            syncStatus.textContent = "🔄 SYNCING...";
             syncStatus.style.color = "#fb923c";
 
-            // Render whatever we have in local cache first so UI never blinks out
+            // Render whatever we have in local cache first so UI stays stable
             renderAllCombinedData([]);
+            
+            // Set input field instantly from stable cache storage
+            document.getElementById('adBudgetSpent').value = globalAdSpend;
+            if (campaignImageBase64) {
+                document.getElementById('imagePreviewBox').innerHTML = `<img src="${campaignImageBase64}">`;
+            }
 
             fetch(SCRIPT_URL)
                 .then(res => res.json())
                 .then(data => {
-                    // 1. Sync global campaign name and visual data from sheet database
                     if(data.campaign) {
                         document.getElementById('campaignName').value = data.campaign.name || "";
+                        
+                        // Overwrite cache if cloud returns valid numbers
                         globalAdSpend = parseFloat(data.campaign.adSpend) || 0;
+                        localStorage.setItem('cached_ad_spend', globalAdSpend);
                         document.getElementById('adBudgetSpent').value = globalAdSpend;
                         
-                        // If an image exists in the Google Sheet cloud, display it to everyone
                         if(data.campaign.image && data.campaign.image.trim() !== "") {
                             campaignImageBase64 = data.campaign.image;
+                            localStorage.setItem('cached_campaign_image', campaignImageBase64);
                             document.getElementById('imagePreviewBox').innerHTML = `<img src="${campaignImageBase64}">`;
                         }
                     }
                     
                     const cloudRecords = data.records || [];
                     
-                    // 2. Safely merge cloud entries with local transient logs
                     if (cloudRecords.length > 0) {
                         const pendingLocal = localRecords.filter(lr => lr.id.toString().startsWith("TEMP-"));
                         localRecords = [...pendingLocal, ...cloudRecords.filter(cr => !pendingLocal.some(pl => pl.id.toString() === cr.id.toString()))];
@@ -280,9 +288,9 @@
                     syncStatus.style.color = "#10b981";
                     
                 }).catch(err => { 
-                    console.log("Sync error deferred, running in offline transparency mode:", err); 
+                    console.log("Network lag, running safely from memory shield:", err); 
                     renderAllCombinedData([]);
-                    syncStatus.textContent = "⚠️ DISCONNECTED (RUNNING CACHE)";
+                    syncStatus.textContent = "⚠️ RUNNING OFFLINE CACHE";
                     syncStatus.style.color = "#ef4444";
                 });
         }
@@ -302,10 +310,10 @@
             filterDataAndRecalculate();
         }
 
-        // AUTO RE-POLLING TIMER: Tahimik na nagre-refresh kada 30 segundo para makuha ang ininput ng ka-work mo!
+        // ⏱️ SPEED RUN TICKER: Binabasa ang Cloud kada 3 SEGUNDO para sa mabilisang pooling!
         document.addEventListener("DOMContentLoaded", () => {
             loadCloudData();
-            setInterval(loadCloudData, 30000); 
+            setInterval(loadCloudData, 3000); 
         });
 
         function previewCampaignImage(event) {
@@ -314,6 +322,7 @@
                 const reader = new FileReader();
                 reader.onload = function(e) {
                     campaignImageBase64 = e.target.result;
+                    localStorage.setItem('cached_campaign_image', campaignImageBase64);
                     document.getElementById('imagePreviewBox').innerHTML = `<img src="${campaignImageBase64}">`;
                 }
                 reader.readAsDataURL(file);
@@ -325,14 +334,17 @@
             const spend = parseFloat(document.getElementById('adBudgetSpent').value) || 0;
             globalAdSpend = spend;
             
+            // Lock immediately to memory registry
+            localStorage.setItem('cached_ad_spend', spend);
+            
             filterDataAndRecalculate();
-            syncStatus.textContent = "📤 SYNCING CAMPAIGN VISUAL...";
+            syncStatus.textContent = "📤 SYNCING CAMPAIGN DATA...";
 
             fetch(SCRIPT_URL, {
                 method: "POST",
                 body: JSON.stringify({ action: "updateCampaign", name: name, adSpend: spend, image: campaignImageBase64 })
             }).then(() => {
-                alert("Campaign Visual updated! Ito ay makikita na rin ng buong team mo.");
+                alert("Campaign Visual and Budget Updated globally!");
                 loadCloudData();
             }).catch(err => console.log("Campaign sync error:", err));
         }
@@ -384,8 +396,8 @@
                     followUp: payload.followUp
                 }) 
             }).then(() => {
-                setTimeout(loadCloudData, 800);
-            }).catch(err => console.log("Cloud update deferred:", err));
+                setTimeout(loadCloudData, 500);
+            }).catch(err => console.log("Cloud logging deferred:", err));
         }
 
         function handleInlineChange(id, field, value) {
@@ -421,7 +433,11 @@
             if(confirm("DANGER: Sigurado ka bang burahin ang LAHAT ng data sa Cloud? Mawawalan ng kopya ang buong team.")) {
                 tableBody.innerHTML = "";
                 localRecords = [];
+                globalAdSpend = 0;
+                campaignImageBase64 = "";
                 localStorage.removeItem('cached_inquiries');
+                localStorage.removeItem('cached_ad_spend');
+                localStorage.removeItem('cached_campaign_image');
                 filterDataAndRecalculate();
                 fetch(SCRIPT_URL, { method: "POST", body: JSON.stringify({ action: "clearAll" }) })
                     .catch(err => console.log("Clear all error:", err));
