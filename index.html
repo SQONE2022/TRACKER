@@ -3,8 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Global Team CRM System</title>
-    <!-- Ginamit para sa Excel Export Feature -->
+    <title>SQ1 Tracker System</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     
     <style>
@@ -30,7 +29,7 @@
         .container { max-width: 1600px; margin: 0 auto; }
 
         header { display: flex; flex-direction: column; gap: 1.5rem; margin-bottom: 2rem; border-bottom: 1px solid var(--border-color); padding-bottom: 1.5rem; }
-        @media (min-width: 768px) { header { flex-direction: row; justify-content: space-between; align-items: center; } }
+        @media (min-width: 1200px) { header { flex-direction: row; justify-content: space-between; align-items: center; } }
         .title-area h1 { font-size: 1.75rem; font-weight: 700; letter-spacing: -0.025em; }
         .title-area p { color: var(--text-muted); font-size: 0.875rem; margin-top: 0.25rem; }
 
@@ -40,13 +39,13 @@
         .btn-clear-all { background-color: rgba(239, 68, 68, 0.2); color: var(--accent-red); border: 1px solid var(--accent-red); padding: 0.75rem 1.25rem; font-size: 0.9rem; font-weight: 700; border-radius: 12px; cursor: pointer; transition: background 0.2s; }
         .btn-clear-all:hover { background-color: var(--accent-red); color: white; }
 
-        /* Filter Panel Styles */
-        .filter-panel { background-color: var(--bg-card); border: 1px solid var(--border-color); border-radius: 12px; padding: 1.25rem; margin-bottom: 1.5rem; display: flex; flex-wrap: wrap; gap: 1.5rem; align-items: center; }
-        .filter-title { font-size: 0.85rem; font-weight: 700; color: var(--accent-teal); text-transform: uppercase; letter-spacing: 0.05em; }
-        .filter-group { display: flex; align-items: center; gap: 0.5rem; }
-        .filter-group label { font-size: 0.8rem; font-weight: 700; color: var(--text-muted); }
-        .filter-group input { background-color: var(--bg-input); border: 1px solid var(--border-color); color: white; padding: 0.4rem 0.6rem; border-radius: 6px; outline: none; font-size: 0.85rem; }
-        .btn-reset-filter { background-color: rgba(148, 163, 184, 0.15); color: var(--text-main); border: 1px solid var(--border-color); padding: 0.4rem 0.75rem; font-size: 0.8rem; font-weight: 700; border-radius: 6px; cursor: pointer; transition: background 0.2s; }
+        /* Integrated Filter Section inside Controls Panel */
+        .filter-inline-group { display: flex; flex-wrap: wrap; align-items: center; gap: 0.75rem; background-color: rgba(30, 41, 59, 0.7); padding: 0.5rem 0.75rem; border-radius: 12px; border: 1px solid var(--border-color); }
+        .filter-title { font-size: 0.8rem; font-weight: 700; color: var(--accent-teal); text-transform: uppercase; letter-spacing: 0.05em; display: flex; align-items: center; gap: 0.25rem; }
+        .filter-item { display: flex; align-items: center; gap: 0.4rem; }
+        .filter-item label { font-size: 0.8rem; font-weight: 700; color: var(--text-muted); }
+        .filter-item input { background-color: var(--bg-input); border: 1px solid var(--border-color); color: white; padding: 0.4rem 0.6rem; border-radius: 6px; outline: none; font-size: 0.85rem; color-scheme: dark; }
+        .btn-reset-filter { background-color: rgba(148, 163, 184, 0.15); color: var(--text-main); border: 1px solid var(--border-color); padding: 0.45rem 0.75rem; font-size: 0.8rem; font-weight: 700; border-radius: 6px; cursor: pointer; transition: background 0.2s; }
         .btn-reset-filter:hover { background-color: rgba(148, 163, 184, 0.25); }
 
         .forms-container { display: grid; grid-template-columns: 1fr; gap: 1.5rem; margin-bottom: 2rem; }
@@ -89,7 +88,7 @@
         .table-header-title { padding: 1.25rem 1.5rem; font-size: 1.1rem; font-weight: 700; border-bottom: 1px solid var(--border-color); }
         .responsive-table { width: 100%; border-collapse: collapse; text-align: left; font-size: 0.85rem; }
         .responsive-table th { background-color: rgba(51, 65, 85, 0.5); color: var(--text-muted); font-weight: 700; font-size: 0.75rem; text-transform: uppercase; padding: 1rem; border-bottom: 1px solid var(--border-color); white-space: nowrap; }
-        .responsive-table td { padding: 0.75rem 1rem; border-bottom: 1px solid var(--border-color); }
+        .responsive-table td { padding: 0.75rem 1rem; border-bottom: 1px solid var(--border-color); vertical-align: middle; }
         
         .source-badge { display: inline-block; padding: 0.25rem 0.5rem; border-radius: 4px; font-size: 0.75rem; font-weight: 700; }
         .source-badge.ads { background-color: rgba(59, 130, 246, 0.15); color: var(--accent-blue); }
@@ -99,8 +98,15 @@
         .staff-name-text { color: var(--accent-purple); font-weight: 700; font-size: 0.85rem; white-space: nowrap; }
         .table-text-input { background-color: #0f172a; color: #f1f5f9; border: 1px solid transparent; padding: 0.4rem; border-radius: 4px; font-size: 0.8rem; width: 100%; min-width: 140px; outline: none; }
         .table-text-input:focus { border-color: var(--accent-blue); background-color: var(--bg-input); }
-        .table-amount-input { background-color: #0f172a; color: white; border: 1px solid var(--border-color); padding: 0.3rem 0.5rem; border-radius: 4px; font-size: 0.8rem; width: 85px; outline: none; }
-        .table-time-input { background-color: #0f172a; color: white; border: 1px solid var(--border-color); padding: 0.3rem 0.4rem; border-radius: 4px; font-size: 0.8rem; outline: none; }
+        
+        /* Specialized Short Text Input for Table Time Grid */
+        .table-time-input { background-color: rgba(15, 23, 42, 0.6); color: #cbd5e1; border: 1px solid rgba(71, 85, 105, 0.5); padding: 0.3rem 0.5rem; border-radius: 6px; font-size: 0.8rem; font-family: monospace; font-weight: 700; text-align: center; width: 95px; outline: none; }
+        .table-time-input:focus { border-color: var(--accent-blue); background-color: var(--bg-input); }
+
+        .amount-wrapper { display: inline-flex; align-items: center; background-color: #0f172a; border: 1px solid var(--border-color); border-radius: 4px; padding: 0.2rem 0.5rem; width: 100px; gap: 2px; }
+        .amount-symbol { color: var(--text-muted); font-size: 0.85rem; font-weight: bold; }
+        .table-amount-input { background-color: transparent; color: white; border: none; padding: 0; font-size: 0.8rem; width: 100%; outline: none; text-align: left; }
+        
         .btn-delete-row { background-color: transparent; color: var(--accent-red); border: 1px solid var(--accent-red); padding: 0.25rem 0.5rem; border-radius: 4px; cursor: pointer; font-weight: bold; font-size: 0.75rem; }
         .btn-delete-row:hover { background-color: var(--accent-red); color: white; }
         .sync-status-indicator { font-size: 0.8rem; color: var(--accent-green); font-weight: bold; display: inline-block; margin-left: 10px; }
@@ -111,35 +117,30 @@
     <div class="container">
         <header>
             <div class="title-area">
-                <h1>TEAM INQUIRIES TRACKER <span id="syncStatus" class="sync-status-indicator">● LIVE CONNECTED</span></h1>
-                <p>SHARED REALTIME SYSTEM SYSTEM — OPEN TO ALL TEAM DEVICES</p>
+                <h1>INQUIRIES TRACKER <span id="syncStatus" class="sync-status-indicator">● LIVE CONNECTED</span></h1>
             </div>
             
             <div class="controls-panel">
+                <div class="filter-inline-group">
+                    <div class="filter-item">
+                        <label>Start Date:</label>
+                        <input type="date" id="filterStartDate" onchange="applyDateFilter()">
+                    </div>
+                    <div class="filter-item">
+                        <label>End Date:</label>
+                        <input type="date" id="filterEndDate" onchange="applyDateFilter()">
+                    </div>
+                    <button class="btn-reset-filter" onclick="resetDateFilter()">Show All Records</button>
+                </div>
+
                 <button class="btn-excel" onclick="exportToExcel()">📊 Export System Data to Excel</button>
                 <button class="btn-clear-all" onclick="clearAllTrackerData()">🗑️ Clear Cloud Data</button>
             </div>
         </header>
 
-        <!-- Dynamic Date Picker Filter Panel -->
-        <section class="filter-panel">
-            <div class="filter-title">📅 Filter System View:</div>
-            <div class="filter-group">
-                <label>Start Date:</label>
-                <input type="date" id="filterStartDate" onchange="applyDateFilter()">
-            </div>
-            <div class="filter-group">
-                <label>End Date:</label>
-                <input type="date" id="filterEndDate" onchange="applyDateFilter()">
-            </div>
-            <button class="btn-reset-filter" onclick="resetDateFilter()">Show All Records</button>
-        </section>
-
         <div class="forms-container">
-            <!-- Global Campaign Form Panel -->
             <section class="form-panel campaign-panel">
                 <h3>CAMPAIGN INFO</h3>
-                <div class="sub-label">SYNCHRONIZED ON ALL SCREEN DEVICES</div>
                 <div class="form-grid">
                     <div class="input-box">
                         <label>CAMPAIGN NAME:</label>
@@ -163,10 +164,8 @@
                 </div>
             </section>
 
-            <!-- Global Entry Logger Panel -->
             <section class="form-panel log-panel">
                 <h3>➕ NEW ENTRY LOGGER</h3>
-                <div class="sub-label">Mag-input dito para makita agad sa website ng buong koponan:</div>
                 <div class="form-grid">
                     <div class="input-box">
                         <label>Date</label>
@@ -178,11 +177,11 @@
                     </div>
                     <div class="input-box">
                         <label>Time Chat (Oras ng Chat ng Client)</label>
-                        <input type="time" id="insTimeChat">
+                        <input type="text" id="insTimeChat" placeholder="e.g. 12:13 PM">
                     </div>
                     <div class="input-box">
                         <label>Time Reply (Oras ng Sagot ng Staff)</label>
-                        <input type="time" id="insTimeReply">
+                        <input type="text" id="insTimeReply" placeholder="e.g. 12:15 PM">
                     </div>
                     <div class="input-box">
                         <label>Source Type</label>
@@ -208,13 +207,7 @@
                     </div>
                     <div class="input-box">
                         <label>Assigned Staff</label>
-                        <select id="insStaff">
-                            <option value="JESS">JESS</option>
-                            <option value="JHON">JHON</option>
-                            <option value="MARILEN">MARILEN</option>
-                            <option value="MALYN">MALYN</option>
-                            <option value="WILFREDO">WILFREDO</option>
-                        </select>
+                       <input type="text" id="insStaff" placeholder="Pangalan ng Staff">
                     </div>
                     <div></div> 
                     <div class="input-box full-width-input">
@@ -234,7 +227,6 @@
             </section>
         </div>
 
-        <!-- System Scoreboards (Synchronized across all devices) -->
         <section class="kpi-grid">
             <div class="kpi-card blue"><div class="kpi-label">Total Chat</div><div class="kpi-value" id="kpiTotal">0</div></div>
             <div class="kpi-card green"><div class="kpi-label">Ads Chat</div><div class="kpi-value" id="kpiAds">0</div></div>
@@ -244,9 +236,8 @@
             <div class="kpi-card green"><div class="kpi-label">Total Revenue</div><div class="kpi-value" id="kpiRevenue" style="color: #34d399;">₱0.00</div></div>
         </section>
 
-        <!-- Pure Live Web System Table Data -->
         <main class="table-container">
-            <div class="table-header-title">SYSTEM INQUIRIES SHEET (REALTIME STREAM)</div>
+            <div class="table-header-title">SYSTEM INQUIRIES SHEET</div>
             <div style="overflow-x: auto;">
                 <table class="responsive-table">
                     <thead>
@@ -261,16 +252,32 @@
     </div>
 
     <script>
-        const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzGYvSgT8HdmbGAf0AGguxG48_kG7XxVojyyj-73gRHA-Eila07YmiBBG3AEZk0GHQX4A/exec";
+        const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxAuJ41XUVOlmdw3m9-RUNqj9L-XEb4J5EuUckwdq-pe3icIyBEzCGTAzwU31GrnaEo5g/exec";
 
         const tableBody = document.getElementById('tableBody');
         const syncStatus = document.getElementById('syncStatus');
         
-        let cachedCloudRecords = []; // Dito itatabi pansamantala ang galing cloud para sa filter function
+        let cachedCloudRecords = []; 
         let globalAdSpend = 0;
         let globalCampaignName = "";
         let campaignImageBase64 = "";
         let isUserEditingCampaign = false;
+
+        // UTILITY FUNCTION: Sinisiguro nito na kahit anong ISO o string date ang dumating, saktong YYYY-MM-DD lang ang kukunin nang walang Timezone math/bawas-oras
+        function cleanDateString(rawDate) {
+            if (!rawDate) return "";
+            let str = String(rawDate).trim();
+            
+            // Kung ito ay ISO String tulad ng 2026-07-07T16:00:00.000Z o may kasamang space/oras
+            if (str.includes("T")) {
+                str = str.split("T")[0];
+            } else if (str.includes(" ")) {
+                str = str.split(" ")[0];
+            }
+            
+            // Kung sakaling baligtad o iba ang format ng delimiter, kukuha lang ng unang 10 characters (YYYY-MM-DD)
+            return str.substring(0, 10);
+        }
 
         function loadCloudData() {
             if (isUserEditingCampaign) return;
@@ -281,7 +288,6 @@
             fetch(SCRIPT_URL)
                 .then(res => res.json())
                 .then(data => {
-                    // Sync ng Global Campaign Data
                     if(data.campaign && !isUserEditingCampaign) {
                         globalCampaignName = data.campaign.name || "";
                         globalAdSpend = parseFloat(data.campaign.adSpend) || 0;
@@ -292,14 +298,14 @@
                         document.getElementById('kpiAdSpend').textContent = "₱" + globalAdSpend.toLocaleString('en-US', {minimumFractionDigits: 2});
                         
                         if (campaignImageBase64) {
-                            document.getElementById('imagePreviewBox').innerHTML = `<img src="${campaignImageBase64}">`;
+                            document.getElementById('imagePreviewBox').innerHTML = `<img src="${campaignImageBase64}" style="width:100%; height:100%; object-fit:contain;">`;
                         } else {
                             document.getElementById('imagePreviewBox').innerHTML = `<div class="image-preview-placeholder">No global image synced yet.</div>`;
                         }
                     }
                     
                     cachedCloudRecords = data.records || [];
-                    applyDateFilter(); // Pinapatakbo ang filter at sorting bago i-render sa screen
+                    applyDateFilter(); 
                     
                     syncStatus.textContent = "● LIVE CONNECTED";
                     syncStatus.style.color = "#10b981";
@@ -316,7 +322,6 @@
             document.getElementById('kpiAdSpend').textContent = "₱" + globalAdSpend.toLocaleString('en-US', {minimumFractionDigits: 2});
         }
 
-        // FILTER FUNCTION: Sinasala ang view base sa piniling petsa nang hindi sinisira ang data ng iba
         function applyDateFilter() {
             const startVal = document.getElementById('filterStartDate').value;
             const endVal = document.getElementById('filterEndDate').value;
@@ -325,19 +330,19 @@
 
             if (startVal) {
                 filteredList = filteredList.filter(r => {
-                    let rDate = r.date ? (r.date.includes("T") ? r.date.split("T")[0] : r.date.substring(0, 10)) : "";
+                    let rDate = cleanDateString(r.date);
                     return rDate >= startVal;
                 });
             }
             if (endVal) {
                 filteredList = filteredList.filter(r => {
-                    let rDate = r.date ? (r.date.includes("T") ? r.date.split("T")[0] : r.date.substring(0, 10)) : "";
+                    let rDate = cleanDateString(r.date);
                     return rDate <= endVal;
                 });
             }
 
-            // Auto-sort mula sa pinakabagong gawang entry
-            filteredList.sort((a, b) => new Date(b.date) - new Date(a.date));
+            // String Sorting gamit ang saktong nalinis na date strings para maiwasan ang maling lundag ng araw
+            filteredList.sort((a, b) => cleanDateString(b.date).localeCompare(cleanDateString(a.date)));
             
             tableBody.innerHTML = "";
             if (filteredList.length === 0) {
@@ -356,6 +361,16 @@
             applyDateFilter();
         }
 
+        function getLive12HourTimeString() {
+            const now = new Date();
+            let hours = now.getHours();
+            const minutes = String(now.getMinutes()).padStart(2, '0');
+            const ampm = hours >= 12 ? 'PM' : 'AM';
+            hours = hours % 12;
+            hours = hours ? hours : 12; 
+            return `${hours}:${minutes} ${ampm}`;
+        }
+
         document.addEventListener("DOMContentLoaded", () => {
             const now = new Date();
             const year = now.getFullYear();
@@ -363,11 +378,9 @@
             const day = String(now.getDate()).padStart(2, '0');
             document.getElementById('insDate').value = `${year}-${month}-${day}`;
 
-            // Auto-fill ng kasalukuyang oras para mabilis ang encoder
-            const hours = String(now.getHours()).padStart(2, '0');
-            const minutes = String(now.getMinutes()).padStart(2, '0');
-            document.getElementById('insTimeChat').value = `${hours}:${minutes}`;
-            document.getElementById('insTimeReply').value = `${hours}:${minutes}`;
+            const currentLiveTime = getLive12HourTimeString();
+            document.getElementById('insTimeChat').value = currentLiveTime;
+            document.getElementById('insTimeReply').value = currentLiveTime;
 
             loadCloudData();
             setInterval(loadCloudData, 15000); 
@@ -384,8 +397,28 @@
             if (file) {
                 const reader = new FileReader();
                 reader.onload = function(e) {
-                    campaignImageBase64 = e.target.result;
-                    document.getElementById('imagePreviewBox').innerHTML = `<img src="${campaignImageBase64}">`;
+                    const img = new Image();
+                    img.src = e.target.result;
+                    img.onload = function() {
+                        const canvas = document.createElement('canvas');
+                        const ctx = canvas.getContext('2d');
+                        
+                        const MAX_WIDTH = 600;
+                        let width = img.width;
+                        let height = img.height;
+                        
+                        if (width > MAX_WIDTH) {
+                            height *= MAX_WIDTH / width;
+                            width = MAX_WIDTH;
+                        }
+                        
+                        canvas.width = width;
+                        canvas.height = height;
+                        ctx.drawImage(img, 0, 0, width, height);
+                        
+                        campaignImageBase64 = canvas.toDataURL('image/jpeg', 0.6); 
+                        document.getElementById('imagePreviewBox').innerHTML = `<img src="${campaignImageBase64}" style="width:100%; height:100%; object-fit:contain;">`;
+                    }
                 }
                 reader.readAsDataURL(file);
             }
@@ -414,13 +447,13 @@
             const payload = {
                 date: document.getElementById('insDate').value,
                 clientName: name.toUpperCase(),
-                timeChat: document.getElementById('insTimeChat').value || '--:--',
-                timeReply: document.getElementById('insTimeReply').value || '--:--',
+                timeChat: document.getElementById('insTimeChat').value.trim() || 'N/A',
+                timeReply: document.getElementById('insTimeReply').value.trim() || 'N/A',
                 source: document.getElementById('insSource').value,
                 clothing: document.getElementById('insClothing').value.toUpperCase() || 'N/A',
                 status: document.getElementById('insStatus').value,
                 amount: parseFloat(document.getElementById('insAmount').value) || 0,
-                staff: document.getElementById('insStaff').value.toUpperCase(),
+                staff: document.getElementById('insStaff').value.toUpperCase(), 
                 clientMsg: document.getElementById('insMsg').value || 'N/A',
                 salesResp: document.getElementById('insResp').value || 'N/A',
                 followUp: document.getElementById('insFollow').value || 'N/A'
@@ -430,6 +463,7 @@
             document.getElementById('insMsg').value = '';
             document.getElementById('insResp').value = '';
             document.getElementById('insFollow').value = '';
+            document.getElementById('insStaff').value = '';
 
             fetch(SCRIPT_URL, { 
                 method: "POST", 
@@ -457,7 +491,7 @@
 
         function renderTableRow(obj) {
             const newRow = document.createElement('tr');
-            let cleanDate = obj.date ? (obj.date.includes("T") ? obj.date.split("T")[0] : obj.date.substring(0, 10)) : "";
+            let cleanDate = cleanDateString(obj.date);
             
             const badgeClass = obj.source === 'ADS' ? 'source-badge ads' : 'source-badge organic';
             const pendingStyleClass = obj.status === 'PENDING' ? 'table-select pending-style' : 'table-select';
@@ -465,8 +499,8 @@
             newRow.innerHTML = `
                 <td>${cleanDate}</td>
                 <td style="font-weight:bold;">${obj.clientName}</td>
-                <td><input type="time" class="table-time-input" value="${obj.timeChat || ''}" onchange="handleInlineChange('${obj.id}', 'timeChat', this.value)"></td>
-                <td><input type="time" class="table-time-input" value="${obj.timeReply || ''}" onchange="handleInlineChange('${obj.id}', 'timeReply', this.value)"></td>
+                <td><input type="text" class="table-time-input" value="${obj.timeChat}" onchange="handleInlineChange('${obj.id}', 'timeChat', this.value)"></td>
+                <td><input type="text" class="table-time-input" value="${obj.timeReply}" onchange="handleInlineChange('${obj.id}', 'timeReply', this.value)"></td>
                 <td><span class="${badgeClass}">${obj.source}</span></td>
                 <td>${obj.clothing}</td>
                 <td><span class="staff-name-text">👤 ${obj.staff}</span></td>
@@ -477,7 +511,10 @@
                     </select>
                 </td>
                 <td>
-                    ₱<input type="number" class="table-amount-input" value="${obj.amount}" onchange="handleInlineChange('${obj.id}', 'amount', parseFloat(this.value)||0)">
+                    <div class="amount-wrapper">
+                        <span class="amount-symbol">₱</span>
+                        <input type="number" class="table-amount-input" value="${obj.amount}" onchange="handleInlineChange('${obj.id}', 'amount', parseFloat(this.value)||0)">
+                    </div>
                 </td>
                 <td><input type="text" class="table-text-input" value="${obj.clientMsg}" onchange="handleInlineChange('${obj.id}', 'clientMsg', this.value)"></td>
                 <td><input type="text" class="table-text-input" value="${obj.salesResp}" onchange="handleInlineChange('${obj.id}', 'salesResp', this.value)"></td>
@@ -507,14 +544,21 @@
             const rows = tableBody.querySelectorAll('tr');
 
             rows.forEach(row => {
-                if(row.cells.length < 12) return;
+                if(row.cells.length < 13) return; 
+
                 dataArray.push([
-                    row.cells[0].innerText, row.cells[1].innerText, 
-                    row.cells[2].querySelector('input').value, row.cells[3].querySelector('input').value,
-                    row.cells[4].innerText, row.cells[5].innerText,
-                    row.cells[6].innerText.replace('👤', '').trim(), row.cells[7].querySelector('select').value,
-                    parseFloat(row.cells[8].querySelector('input').value) || 0, row.cells[9].querySelector('input').value,
-                    row.cells[10].querySelector('input').value, row.cells[11].querySelector('input').value
+                    row.cells[0].innerText, 
+                    row.cells[1].innerText, 
+                    row.cells[2].querySelector('input').value, 
+                    row.cells[3].querySelector('input').value,
+                    row.cells[4].innerText, 
+                    row.cells[5].innerText,
+                    row.cells[6].innerText.replace('👤', '').trim(), 
+                    row.cells[7].querySelector('select').value,
+                    parseFloat(row.cells[8].querySelector('input').value) || 0, 
+                    row.cells[9].querySelector('input').value,
+                    row.cells[10].querySelector('input').value, 
+                    row.cells[11].querySelector('input').value
                 ]);
             });
 
