@@ -40,6 +40,15 @@
         .btn-clear-all { background-color: rgba(239, 68, 68, 0.2); color: var(--accent-red); border: 1px solid var(--accent-red); padding: 0.75rem 1.25rem; font-size: 0.9rem; font-weight: 700; border-radius: 12px; cursor: pointer; transition: background 0.2s; }
         .btn-clear-all:hover { background-color: var(--accent-red); color: white; }
 
+        /* Filter Panel Styles */
+        .filter-panel { background-color: var(--bg-card); border: 1px solid var(--border-color); border-radius: 12px; padding: 1.25rem; margin-bottom: 1.5rem; display: flex; flex-wrap: wrap; gap: 1.5rem; align-items: center; }
+        .filter-title { font-size: 0.85rem; font-weight: 700; color: var(--accent-teal); text-transform: uppercase; letter-spacing: 0.05em; }
+        .filter-group { display: flex; align-items: center; gap: 0.5rem; }
+        .filter-group label { font-size: 0.8rem; font-weight: 700; color: var(--text-muted); }
+        .filter-group input { background-color: var(--bg-input); border: 1px solid var(--border-color); color: white; padding: 0.4rem 0.6rem; border-radius: 6px; outline: none; font-size: 0.85rem; }
+        .btn-reset-filter { background-color: rgba(148, 163, 184, 0.15); color: var(--text-main); border: 1px solid var(--border-color); padding: 0.4rem 0.75rem; font-size: 0.8rem; font-weight: 700; border-radius: 6px; cursor: pointer; transition: background 0.2s; }
+        .btn-reset-filter:hover { background-color: rgba(148, 163, 184, 0.25); }
+
         .forms-container { display: grid; grid-template-columns: 1fr; gap: 1.5rem; margin-bottom: 2rem; }
         @media (min-width: 1024px) { .forms-container { grid-template-columns: 1fr 2.5fr; } }
         .form-panel { background-color: var(--bg-card); border: 1px solid var(--border-color); border-radius: 12px; padding: 1.5rem; }
@@ -91,6 +100,7 @@
         .table-text-input { background-color: #0f172a; color: #f1f5f9; border: 1px solid transparent; padding: 0.4rem; border-radius: 4px; font-size: 0.8rem; width: 100%; min-width: 140px; outline: none; }
         .table-text-input:focus { border-color: var(--accent-blue); background-color: var(--bg-input); }
         .table-amount-input { background-color: #0f172a; color: white; border: 1px solid var(--border-color); padding: 0.3rem 0.5rem; border-radius: 4px; font-size: 0.8rem; width: 85px; outline: none; }
+        .table-time-input { background-color: #0f172a; color: white; border: 1px solid var(--border-color); padding: 0.3rem 0.4rem; border-radius: 4px; font-size: 0.8rem; outline: none; }
         .btn-delete-row { background-color: transparent; color: var(--accent-red); border: 1px solid var(--accent-red); padding: 0.25rem 0.5rem; border-radius: 4px; cursor: pointer; font-weight: bold; font-size: 0.75rem; }
         .btn-delete-row:hover { background-color: var(--accent-red); color: white; }
         .sync-status-indicator { font-size: 0.8rem; color: var(--accent-green); font-weight: bold; display: inline-block; margin-left: 10px; }
@@ -110,6 +120,20 @@
                 <button class="btn-clear-all" onclick="clearAllTrackerData()">🗑️ Clear Cloud Data</button>
             </div>
         </header>
+
+        <!-- Dynamic Date Picker Filter Panel -->
+        <section class="filter-panel">
+            <div class="filter-title">📅 Filter System View:</div>
+            <div class="filter-group">
+                <label>Start Date:</label>
+                <input type="date" id="filterStartDate" onchange="applyDateFilter()">
+            </div>
+            <div class="filter-group">
+                <label>End Date:</label>
+                <input type="date" id="filterEndDate" onchange="applyDateFilter()">
+            </div>
+            <button class="btn-reset-filter" onclick="resetDateFilter()">Show All Records</button>
+        </section>
 
         <div class="forms-container">
             <!-- Global Campaign Form Panel -->
@@ -151,6 +175,14 @@
                     <div class="input-box">
                         <label>Client Name</label>
                         <input type="text" id="insName" placeholder="Juan Dela Cruz">
+                    </div>
+                    <div class="input-box">
+                        <label>Time Chat (Oras ng Chat ng Client)</label>
+                        <input type="time" id="insTimeChat">
+                    </div>
+                    <div class="input-box">
+                        <label>Time Reply (Oras ng Sagot ng Staff)</label>
+                        <input type="time" id="insTimeReply">
                     </div>
                     <div class="input-box">
                         <label>Source Type</label>
@@ -219,7 +251,7 @@
                 <table class="responsive-table">
                     <thead>
                         <tr>
-                            <th>Date</th><th>Client Name</th><th>Source</th><th>Clothing Type</th><th>Assigned Staff</th><th>Status</th><th>Amount</th><th>Client Message</th><th>Sales Response</th><th>Follow-up Message</th><th>Action</th>
+                            <th>Date</th><th>Client Name</th><th>Time Chat</th><th>Time Reply</th><th>Source</th><th>Clothing Type</th><th>Assigned Staff</th><th>Status</th><th>Amount</th><th>Client Message</th><th>Sales Response</th><th>Follow-up Message</th><th>Action</th>
                         </tr>
                     </thead>
                     <tbody id="tableBody"></tbody>
@@ -229,18 +261,17 @@
     </div>
 
     <script>
-        // KAPALITAN: Siguraduhing tugma ito sa iyong Google Web App Script Deployment URL!
         const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzGYvSgT8HdmbGAf0AGguxG48_kG7XxVojyyj-73gRHA-Eila07YmiBBG3AEZk0GHQX4A/exec";
 
         const tableBody = document.getElementById('tableBody');
         const syncStatus = document.getElementById('syncStatus');
         
+        let cachedCloudRecords = []; // Dito itatabi pansamantala ang galing cloud para sa filter function
         let globalAdSpend = 0;
         let globalCampaignName = "";
         let campaignImageBase64 = "";
         let isUserEditingCampaign = false;
 
-        // PURE STREAM LOGIC: Palaging kumukuha sa iisang server data upang sabay na makita sa lahat ng gadgets
         function loadCloudData() {
             if (isUserEditingCampaign) return;
 
@@ -267,9 +298,8 @@
                         }
                     }
                     
-                    // Render ng kabuuang listahan ng system records
-                    const cloudRecords = data.records || [];
-                    renderAllCombinedData(cloudRecords);
+                    cachedCloudRecords = data.records || [];
+                    applyDateFilter(); // Pinapatakbo ang filter at sorting bago i-render sa screen
                     
                     syncStatus.textContent = "● LIVE CONNECTED";
                     syncStatus.style.color = "#10b981";
@@ -286,30 +316,60 @@
             document.getElementById('kpiAdSpend').textContent = "₱" + globalAdSpend.toLocaleString('en-US', {minimumFractionDigits: 2});
         }
 
-        function renderAllCombinedData(recordsList) {
+        // FILTER FUNCTION: Sinasala ang view base sa piniling petsa nang hindi sinisira ang data ng iba
+        function applyDateFilter() {
+            const startVal = document.getElementById('filterStartDate').value;
+            const endVal = document.getElementById('filterEndDate').value;
+
+            let filteredList = [...cachedCloudRecords];
+
+            if (startVal) {
+                filteredList = filteredList.filter(r => {
+                    let rDate = r.date ? (r.date.includes("T") ? r.date.split("T")[0] : r.date.substring(0, 10)) : "";
+                    return rDate >= startVal;
+                });
+            }
+            if (endVal) {
+                filteredList = filteredList.filter(r => {
+                    let rDate = r.date ? (r.date.includes("T") ? r.date.split("T")[0] : r.date.substring(0, 10)) : "";
+                    return rDate <= endVal;
+                });
+            }
+
+            // Auto-sort mula sa pinakabagong gawang entry
+            filteredList.sort((a, b) => new Date(b.date) - new Date(a.date));
+            
             tableBody.innerHTML = "";
-            if (recordsList.length === 0) {
-                tableBody.innerHTML = `<tr><td colspan="11" style="text-align:center; padding:20px; color:var(--text-muted);">No logs found inside the system database.</td></tr>`;
-                calculateKPIs(recordsList);
+            if (filteredList.length === 0) {
+                tableBody.innerHTML = `<tr><td colspan="13" style="text-align:center; padding:20px; color:var(--text-muted);">No logs found matching the filters.</td></tr>`;
+                calculateKPIs(filteredList);
                 return;
             }
-            
-            // Auto-sort mula sa pinakabagong gawang entry para pareho ang view ng CP at PC
-            recordsList.sort((a, b) => new Date(b.date) - new Date(a.date));
-            recordsList.forEach(record => renderTableRow(record));
-            calculateKPIs(recordsList);
+
+            filteredList.forEach(record => renderTableRow(record));
+            calculateKPIs(filteredList);
+        }
+
+        function resetDateFilter() {
+            document.getElementById('filterStartDate').value = "";
+            document.getElementById('filterEndDate').value = "";
+            applyDateFilter();
         }
 
         document.addEventListener("DOMContentLoaded", () => {
-            // Default automated placeholder date para sa encoder
             const now = new Date();
             const year = now.getFullYear();
             const month = String(now.getMonth() + 1).padStart(2, '0');
-            document.getElementById('insDate').value = `${year}-${month}-${String(now.getDate()).padStart(2, '0')}`;
+            const day = String(now.getDate()).padStart(2, '0');
+            document.getElementById('insDate').value = `${year}-${month}-${day}`;
+
+            // Auto-fill ng kasalukuyang oras para mabilis ang encoder
+            const hours = String(now.getHours()).padStart(2, '0');
+            const minutes = String(now.getMinutes()).padStart(2, '0');
+            document.getElementById('insTimeChat').value = `${hours}:${minutes}`;
+            document.getElementById('insTimeReply').value = `${hours}:${minutes}`;
 
             loadCloudData();
-            
-            // Auto refresh cycle loop (Tuwing 15 segundo, kusa itong titingin sa cloud para sa bagong lagay ng iba)
             setInterval(loadCloudData, 15000); 
 
             const campInputs = [document.getElementById('campaignName'), document.getElementById('adBudgetSpent')];
@@ -354,6 +414,8 @@
             const payload = {
                 date: document.getElementById('insDate').value,
                 clientName: name.toUpperCase(),
+                timeChat: document.getElementById('insTimeChat').value || '--:--',
+                timeReply: document.getElementById('insTimeReply').value || '--:--',
                 source: document.getElementById('insSource').value,
                 clothing: document.getElementById('insClothing').value.toUpperCase() || 'N/A',
                 status: document.getElementById('insStatus').value,
@@ -364,7 +426,6 @@
                 followUp: document.getElementById('insFollow').value || 'N/A'
             };
 
-            // Linisin ang entry boxes ng device na nag-input matapos i-click
             document.getElementById('insName').value = '';
             document.getElementById('insMsg').value = '';
             document.getElementById('insResp').value = '';
@@ -404,6 +465,8 @@
             newRow.innerHTML = `
                 <td>${cleanDate}</td>
                 <td style="font-weight:bold;">${obj.clientName}</td>
+                <td><input type="time" class="table-time-input" value="${obj.timeChat || ''}" onchange="handleInlineChange('${obj.id}', 'timeChat', this.value)"></td>
+                <td><input type="time" class="table-time-input" value="${obj.timeReply || ''}" onchange="handleInlineChange('${obj.id}', 'timeReply', this.value)"></td>
                 <td><span class="${badgeClass}">${obj.source}</span></td>
                 <td>${obj.clothing}</td>
                 <td><span class="staff-name-text">👤 ${obj.staff}</span></td>
@@ -440,23 +503,25 @@
         }
 
         function exportToExcel() {
-            const dataArray = [["Date", "Client Name", "Source Type", "Clothing Type", "Assigned Staff", "Deal Status", "Amount Paid (PHP)", "Client Message", "Sales Response", "Follow-up Note"]];
+            const dataArray = [["Date", "Client Name", "Time Chat", "Time Reply", "Source Type", "Clothing Type", "Assigned Staff", "Deal Status", "Amount Paid (PHP)", "Client Message", "Sales Response", "Follow-up Note"]];
             const rows = tableBody.querySelectorAll('tr');
 
             rows.forEach(row => {
-                if(row.cells.length < 10) return;
+                if(row.cells.length < 12) return;
                 dataArray.push([
-                    row.cells[0].innerText, row.cells[1].innerText, row.cells[2].innerText, row.cells[3].innerText,
-                    row.cells[4].innerText.replace('👤', '').trim(), row.cells[5].querySelector('select').value,
-                    parseFloat(row.cells[6].querySelector('input').value) || 0, row.cells[7].querySelector('input').value,
-                    row.cells[8].querySelector('input').value, row.cells[9].querySelector('input').value
+                    row.cells[0].innerText, row.cells[1].innerText, 
+                    row.cells[2].querySelector('input').value, row.cells[3].querySelector('input').value,
+                    row.cells[4].innerText, row.cells[5].innerText,
+                    row.cells[6].innerText.replace('👤', '').trim(), row.cells[7].querySelector('select').value,
+                    parseFloat(row.cells[8].querySelector('input').value) || 0, row.cells[9].querySelector('input').value,
+                    row.cells[10].querySelector('input').value, row.cells[11].querySelector('input').value
                 ]);
             });
 
             const worksheet = XLSX.utils.aoa_to_sheet(dataArray);
             const workbook = XLSX.utils.book_new();
-            XLSX.utils.book_append_sheet(workbook, worksheet, "System Master Log");
-            XLSX.writeFile(workbook, `CRM_System_Master_Report.xlsx`);
+            XLSX.utils.book_append_sheet(workbook, worksheet, "System Filtered Log");
+            XLSX.writeFile(workbook, `CRM_System_Report.xlsx`);
         }
 
         function clearAllTrackerData() {
