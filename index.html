@@ -98,6 +98,7 @@
         .table-amount-input { background-color: #0f172a; color: white; border: 1px solid var(--border-color); padding: 0.3rem 0.5rem; border-radius: 4px; font-size: 0.8rem; width: 85px; outline: none; }
         .btn-delete-row { background-color: transparent; color: var(--accent-red); border: 1px solid var(--accent-red); padding: 0.25rem 0.5rem; border-radius: 4px; cursor: pointer; font-weight: bold; font-size: 0.75rem; }
         .btn-delete-row:hover { background-color: var(--accent-red); color: white; }
+        .sync-status-indicator { font-size: 0.8rem; color: var(--accent-green); font-weight: bold; display: inline-block; margin-left: 10px; }
     </style>
 </head>
 <body>
@@ -105,8 +106,8 @@
     <div class="container">
         <header>
             <div class="title-area">
-                <h1>INQUIRIES TRACKER (CLOUD)</h1>
-                <p>GOOGLE SHEETS RE-SYNC SYSTEM</p>
+                <h1>INQUIRIES TRACKER (CLOUD) <span id="syncStatus" class="sync-status-indicator">● LIVE CONNECTED</span></h1>
+                <p>REALTIME TRANSPARENCY SYSTEM FOR THE WHOLE TEAM</p>
             </div>
             
             <div class="controls-panel">
@@ -128,7 +129,7 @@
         <div class="forms-container">
             <section class="form-panel campaign-panel">
                 <h3>CAMPAIGN INFO</h3>
-                <div class="sub-label">MANUAL INPUT</div>
+                <div class="sub-label">SHARED GLOBALLY ACROSS ALL ACCOUNTS</div>
                 <div class="form-grid">
                     <div class="input-box">
                         <label>CAMPAIGN NAME:</label>
@@ -139,7 +140,7 @@
                         <label>CAMPAIGN IMAGE / VISUAL:</label>
                         <input type="file" id="campaignImageFile" accept="image/*" onchange="previewCampaignImage(event)">
                         <div class="image-preview-container" id="imagePreviewBox">
-                            <div class="image-preview-placeholder" id="previewPlaceholder">Image Uploaded here will stay on refresh.</div>
+                            <div class="image-preview-placeholder" id="previewPlaceholder">No global image synced yet.</div>
                         </div>
                     </div>
 
@@ -148,7 +149,7 @@
                         <input type="number" id="adBudgetSpent" placeholder="0.00" value="0.00">
                     </div>
                     
-                    <button class="btn-save" onclick="updateCampaignData()">Apply & Update</button>
+                    <button class="btn-save" onclick="updateCampaignData()">Apply & Sync to Everyone</button>
                 </div>
             </section>
 
@@ -236,25 +237,30 @@
         const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzGYvSgT8HdmbGAf0AGguxG48_kG7XxVojyyj-73gRHA-Eila07YmiBBG3AEZk0GHQX4A/exec";
 
         const tableBody = document.getElementById('tableBody');
+        const syncStatus = document.getElementById('syncStatus');
         let globalAdSpend = 0;
         let campaignImageBase64 = "";
         
-        // Load whatever exists in local caching IMMEDIATELY to avoid 0 counts or blank rows on refresh
         let localRecords = JSON.parse(localStorage.getItem('cached_inquiries')) || [];
 
         function loadCloudData() {
-            // Step 1: Render localized records immediately so data never blinks out of existence
+            syncStatus.textContent = "🔄 SYNCING CLOUD REPO...";
+            syncStatus.style.color = "#fb923c";
+
+            // Render whatever we have in local cache first so UI never blinks out
             renderAllCombinedData([]);
 
-            // Step 2: Fetch cloud records and merge dynamically without overriding new staff entries
             fetch(SCRIPT_URL)
                 .then(res => res.json())
                 .then(data => {
+                    // 1. Sync global campaign name and visual data from sheet database
                     if(data.campaign) {
                         document.getElementById('campaignName').value = data.campaign.name || "";
                         globalAdSpend = parseFloat(data.campaign.adSpend) || 0;
                         document.getElementById('adBudgetSpent').value = globalAdSpend;
-                        if(data.campaign.image) {
+                        
+                        // If an image exists in the Google Sheet cloud, display it to everyone
+                        if(data.campaign.image && data.campaign.image.trim() !== "") {
                             campaignImageBase64 = data.campaign.image;
                             document.getElementById('imagePreviewBox').innerHTML = `<img src="${campaignImageBase64}">`;
                         }
@@ -262,21 +268,22 @@
                     
                     const cloudRecords = data.records || [];
                     
-                    // Merge master cloud records into local system and update cache for consistency
+                    // 2. Safely merge cloud entries with local transient logs
                     if (cloudRecords.length > 0) {
-                        // Keep track of unsynced temporary logs
                         const pendingLocal = localRecords.filter(lr => lr.id.toString().startsWith("TEMP-"));
-                        
-                        // Replace state with fresh data from sheet + active local temporary rows
                         localRecords = [...pendingLocal, ...cloudRecords.filter(cr => !pendingLocal.some(pl => pl.id.toString() === cr.id.toString()))];
                         localStorage.setItem('cached_inquiries', JSON.stringify(localRecords));
                     }
                     
                     renderAllCombinedData(cloudRecords);
+                    syncStatus.textContent = "● LIVE CONNECTED";
+                    syncStatus.style.color = "#10b981";
                     
                 }).catch(err => { 
-                    console.log("Network fetching deferred, serving data directly via stable cache storage:", err); 
+                    console.log("Sync error deferred, running in offline transparency mode:", err); 
                     renderAllCombinedData([]);
+                    syncStatus.textContent = "⚠️ DISCONNECTED (RUNNING CACHE)";
+                    syncStatus.style.color = "#ef4444";
                 });
         }
 
@@ -287,8 +294,6 @@
             const pendingLocal = localRecords.filter(lr => !cloudIds.includes(lr.id.toString()));
             
             const combined = [...pendingLocal, ...cloudRecords];
-            
-            // Sort by Date descending (Newest first)
             const sortedRecords = combined.sort((a, b) => new Date(b.date) - new Date(a.date));
             
             sortedRecords.forEach(record => {
@@ -297,7 +302,11 @@
             filterDataAndRecalculate();
         }
 
-        document.addEventListener("DOMContentLoaded", loadCloudData);
+        // AUTO RE-POLLING TIMER: Tahimik na nagre-refresh kada 30 segundo para makuha ang ininput ng ka-work mo!
+        document.addEventListener("DOMContentLoaded", () => {
+            loadCloudData();
+            setInterval(loadCloudData, 30000); 
+        });
 
         function previewCampaignImage(event) {
             const file = event.target.files[0];
@@ -317,11 +326,14 @@
             globalAdSpend = spend;
             
             filterDataAndRecalculate();
-            alert("Campaign settings saved locally! Syncing to Google Sheets...");
+            syncStatus.textContent = "📤 SYNCING CAMPAIGN VISUAL...";
 
             fetch(SCRIPT_URL, {
                 method: "POST",
                 body: JSON.stringify({ action: "updateCampaign", name: name, adSpend: spend, image: campaignImageBase64 })
+            }).then(() => {
+                alert("Campaign Visual updated! Ito ay makikita na rin ng buong team mo.");
+                loadCloudData();
             }).catch(err => console.log("Campaign sync error:", err));
         }
 
@@ -343,11 +355,9 @@
                 followUp: document.getElementById('insFollow').value || 'N/A'
             };
 
-            // Push to local storage instantly to guarantee it survives refreshes
             localRecords.unshift(payload);
             localStorage.setItem('cached_inquiries', JSON.stringify(localRecords));
 
-            // Prepend element directly to the table view
             const newRow = createTableRowElement(payload);
             tableBody.insertBefore(newRow, tableBody.firstChild);
             
@@ -374,9 +384,8 @@
                     followUp: payload.followUp
                 }) 
             }).then(() => {
-                // Keep the record but strip out the temp flag once the cloud repository holds it
                 setTimeout(loadCloudData, 800);
-            }).catch(err => console.log("Cloud background update deferred:", err));
+            }).catch(err => console.log("Cloud update deferred:", err));
         }
 
         function handleInlineChange(id, field, value) {
@@ -394,7 +403,7 @@
         }
 
         function deleteRow(id) {
-            if(confirm("Sigurado kang buburahin mo ito?")) {
+            if(confirm("Sigurado kang buburahin mo ito? Full transparency: Mabubura ito sa lahat ng screen ng team.")) {
                 const row = document.querySelector(`tr[data-id='${id}']`);
                 if(row) row.remove();
                 
@@ -409,7 +418,7 @@
         }
 
         function clearAllTrackerData() {
-            if(confirm("Burahin ang lahat ng entries sa Cloud at Local Storage?")) {
+            if(confirm("DANGER: Sigurado ka bang burahin ang LAHAT ng data sa Cloud? Mawawalan ng kopya ang buong team.")) {
                 tableBody.innerHTML = "";
                 localRecords = [];
                 localStorage.removeItem('cached_inquiries');
