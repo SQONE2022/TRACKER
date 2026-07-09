@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SQ1 Tracker System</title>
+    <title>SQUARE ONE Tracker System</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     
     <style>
@@ -117,7 +117,7 @@
     <div class="container">
         <header>
             <div class="title-area">
-                <h1>INQUIRIES TRACKER <span id="syncStatus" class="sync-status-indicator">● LIVE CONNECTED</span></h1>
+                <h1>TEAM INQUIRIES TRACKER <span id="syncStatus" class="sync-status-indicator">● LIVE CONNECTED</span></h1>
             </div>
             
             <div class="controls-panel">
@@ -141,6 +141,7 @@
         <div class="forms-container">
             <section class="form-panel campaign-panel">
                 <h3>CAMPAIGN INFO</h3>
+                <div class="sub-label">SYNCHRONIZED ON ALL SCREEN DEVICES</div>
                 <div class="form-grid">
                     <div class="input-box">
                         <label>CAMPAIGN NAME:</label>
@@ -263,22 +264,6 @@
         let campaignImageBase64 = "";
         let isUserEditingCampaign = false;
 
-        // UTILITY FUNCTION: Sinisiguro nito na kahit anong ISO o string date ang dumating, saktong YYYY-MM-DD lang ang kukunin nang walang Timezone math/bawas-oras
-        function cleanDateString(rawDate) {
-            if (!rawDate) return "";
-            let str = String(rawDate).trim();
-            
-            // Kung ito ay ISO String tulad ng 2026-07-07T16:00:00.000Z o may kasamang space/oras
-            if (str.includes("T")) {
-                str = str.split("T")[0];
-            } else if (str.includes(" ")) {
-                str = str.split(" ")[0];
-            }
-            
-            // Kung sakaling baligtad o iba ang format ng delimiter, kukuha lang ng unang 10 characters (YYYY-MM-DD)
-            return str.substring(0, 10);
-        }
-
         function loadCloudData() {
             if (isUserEditingCampaign) return;
 
@@ -322,6 +307,7 @@
             document.getElementById('kpiAdSpend').textContent = "₱" + globalAdSpend.toLocaleString('en-US', {minimumFractionDigits: 2});
         }
 
+        // BAGONG LOGIC: Inalis ang new Date() at timezone manipulation para hindi magbago ang araw
         function applyDateFilter() {
             const startVal = document.getElementById('filterStartDate').value;
             const endVal = document.getElementById('filterEndDate').value;
@@ -330,19 +316,19 @@
 
             if (startVal) {
                 filteredList = filteredList.filter(r => {
-                    let rDate = cleanDateString(r.date);
+                    let rDate = r.date ? r.date.trim() : "";
                     return rDate >= startVal;
                 });
             }
             if (endVal) {
                 filteredList = filteredList.filter(r => {
-                    let rDate = cleanDateString(r.date);
+                    let rDate = r.date ? r.date.trim() : "";
                     return rDate <= endVal;
                 });
             }
 
-            // String Sorting gamit ang saktong nalinis na date strings para maiwasan ang maling lundag ng araw
-            filteredList.sort((a, b) => cleanDateString(b.date).localeCompare(cleanDateString(a.date)));
+            // Gagamit ng localeCompare string sorting para laging eksakto at walang laban sa Timezone ang UI
+            filteredList.sort((a, b) => b.date.localeCompare(a.date));
             
             tableBody.innerHTML = "";
             if (filteredList.length === 0) {
@@ -489,9 +475,10 @@
             }
         }
 
+        // INAYOS: Direkta nitong isasaksak kung anong malinis na string (e.g. 2026-07-08) ang binigay ng sheet nang walang pagbago
         function renderTableRow(obj) {
             const newRow = document.createElement('tr');
-            let cleanDate = cleanDateString(obj.date);
+            let cleanDate = obj.date ? obj.date.trim() : "";
             
             const badgeClass = obj.source === 'ADS' ? 'source-badge ads' : 'source-badge organic';
             const pendingStyleClass = obj.status === 'PENDING' ? 'table-select pending-style' : 'table-select';
@@ -540,33 +527,61 @@
         }
 
         function exportToExcel() {
-            const dataArray = [["Date", "Client Name", "Time Chat", "Time Reply", "Source Type", "Clothing Type", "Assigned Staff", "Deal Status", "Amount Paid (PHP)", "Client Message", "Sales Response", "Follow-up Note"]];
-            const rows = tableBody.querySelectorAll('tr');
+    // 1. Magpakita ng prompt para sa pagpili ng staff bago mag-export
+    const choice = prompt("Sino ang gustong i-export?\n\nI-type ang:\n[ RHOSE ] - Para kay Rhose lang\n[ JESS ] - Para kay Jess lang\n[ ALL ] - Para sa lahat ng staff\n\n(I-click ang Cancel para kanselahin)");
 
-            rows.forEach(row => {
-                if(row.cells.length < 13) return; 
+    // Kung pinindot ang Cancel o walang tinype
+    if (choice === null) return; 
 
-                dataArray.push([
-                    row.cells[0].innerText, 
-                    row.cells[1].innerText, 
-                    row.cells[2].querySelector('input').value, 
-                    row.cells[3].querySelector('input').value,
-                    row.cells[4].innerText, 
-                    row.cells[5].innerText,
-                    row.cells[6].innerText.replace('👤', '').trim(), 
-                    row.cells[7].querySelector('select').value,
-                    parseFloat(row.cells[8].querySelector('input').value) || 0, 
-                    row.cells[9].querySelector('input').value,
-                    row.cells[10].querySelector('input').value, 
-                    row.cells[11].querySelector('input').value
-                ]);
-            });
+    // Gawing uppercase para hindi maselan sa capitalization (e.g., rhose, Rhose, RHOSE)
+    const filterStaff = choice.trim().toUpperCase();
 
-            const worksheet = XLSX.utils.aoa_to_sheet(dataArray);
-            const workbook = XLSX.utils.book_new();
-            XLSX.utils.book_append_sheet(workbook, worksheet, "System Filtered Log");
-            XLSX.writeFile(workbook, `CRM_System_Report.xlsx`);
-        }
+    // Validasyon ng input
+    if (filterStaff !== "RHOSE" && filterStaff !== "JESS" && filterStaff !== "ALL") {
+        alert("Maling input! Paki-type lamang ang RHOSE, JESS, o ALL.");
+        return;
+    }
+
+    const dataArray = [["Date", "Client Name", "Time Chat", "Time Reply", "Source Type", "Clothing Type", "Assigned Staff", "Deal Status", "Amount Paid (PHP)", "Client Message", "Sales Response", "Follow-up Note"]];
+    const rows = tableBody.querySelectorAll('tr');
+
+    rows.forEach(row => {
+        if(row.cells.length < 13) return; 
+
+        // Kunin ang pangalan ng staff sa kasalukuyang row at linisin ito
+        const staffNameInRow = row.cells[6].innerText.replace('👤', '').trim().toUpperCase();
+
+        // LOGIC NG FILTERING:
+        // Kung pinili ay RHOSE, dapat tugma sa RHOSE. Kung JESS, dapat tugma sa JESS.
+        // Kung ALL, papayagan ang kahit anong staff.
+        if (filterStaff === "RHOSE" && staffNameInRow !== "RHOSE") return;
+        if (filterStaff === "JESS" && staffNameInRow !== "JESS") return;
+
+        // Isama sa dataArray kung pumasa sa filter
+        dataArray.push([
+            row.cells[0].innerText, 
+            row.cells[1].innerText, 
+            row.cells[2].querySelector('input').value, 
+            row.cells[3].querySelector('input').value,
+            row.cells[4].innerText, 
+            row.cells[5].innerText,
+            row.cells[6].innerText.replace('👤', '').trim(), // Dito lalabas ang Assigned Staff sa Excel
+            row.cells[7].querySelector('select').value,
+            parseFloat(row.cells[8].querySelector('input').value) || 0, 
+            row.cells[9].querySelector('input').value,
+            row.cells[10].querySelector('input').value, 
+            row.cells[11].querySelector('input').value
+        ]);
+    });
+
+    // Lagyan ng pangalan ang file base sa kung sino ang pinili
+    const fileNameSuffix = filterStaff === "ALL" ? "ALL_STAFF" : filterStaff;
+
+    const worksheet = XLSX.utils.aoa_to_sheet(dataArray);
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, `System Log - ${fileNameSuffix}`);
+    XLSX.writeFile(workbook, `CRM_System_Report_${fileNameSuffix}.xlsx`);
+}
 
         function clearAllTrackerData() {
             if(confirm("⚠️ CRITICAL WARNING: Sigurado ka bang buburahin ang LAHAT ng system records? Mabubura ito sa screen ng lahat ng ka-team mo.")) {
