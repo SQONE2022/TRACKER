@@ -1,0 +1,553 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Sales & Inquiry Performance Dashboard</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Lucide Icons -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <!-- XLSX Library para sa Export Excel -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+</head>
+<body class="bg-gray-100 font-sans text-gray-800 antialiased">
+
+  <div class="flex h-screen overflow-hidden">
+    
+    <!-- SIDEBAR -->
+    <aside class="w-16 bg-white border-r border-gray-200 flex flex-col items-center py-4 space-y-6">
+      <button class="p-2 text-gray-600 hover:bg-gray-100 rounded-lg">
+        <i data-lucide="menu" class="w-6 h-6"></i>
+      </button>
+      <button class="p-2 bg-blue-50 text-blue-600 rounded-lg flex flex-col items-center text-xs font-semibold">
+        <i data-lucide="layout-dashboard" class="w-6 h-6"></i>
+        <span>Dashboard</span>
+      </button>
+    </aside>
+
+    <!-- MAIN CONTENT AREA -->
+    <main class="flex-1 overflow-y-auto p-6 space-y-4">
+      
+      <!-- TOP NAVIGATION BAR -->
+      <div class="bg-gray-900 text-white p-3 rounded-xl flex flex-wrap items-center justify-between gap-4 shadow-sm">
+        <div class="flex items-center space-x-3">
+          <!-- YEAR SELECTOR -->
+          <div class="flex items-center bg-gray-800 px-3 py-1.5 rounded-lg border border-gray-700">
+            <i data-lucide="calendar" class="w-4 h-4 mr-2 text-blue-400"></i>
+            <span class="text-xs font-bold text-gray-400 mr-2">YEAR:</span>
+            <select id="yearSelect" onchange="changePeriod()" class="bg-transparent text-blue-400 font-bold text-sm focus:outline-none cursor-pointer">
+              <option value="2026" class="bg-gray-900 text-white">2026</option>
+              <option value="2027" class="bg-gray-900 text-white">2027</option>
+              <option value="2028" class="bg-gray-900 text-white">2028</option>
+              <option value="2029" class="bg-gray-900 text-white">2029</option>
+              <option value="2030" class="bg-gray-900 text-white">2030</option>
+            </select>
+          </div>
+
+          <button onclick="exportToExcel()" class="flex items-center bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold px-3 py-2 rounded-lg transition">
+            <i data-lucide="file-spreadsheet" class="w-4 h-4 mr-1.5"></i> Export Excel
+          </button>
+
+          <button onclick="saveAllData()" class="flex items-center bg-emerald-500 hover:bg-emerald-600 text-white text-xs font-semibold px-3 py-2 rounded-lg transition">
+            <i data-lucide="save" class="w-4 h-4 mr-1.5"></i> Save Data
+          </button>
+        </div>
+
+        <button onclick="addNewEntryRow()" class="flex items-center bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold px-4 py-2 rounded-lg transition shadow">
+          <i data-lucide="plus" class="w-4 h-4 mr-1"></i> Add Entry
+        </button>
+      </div>
+
+      <!-- MONTH TABS -->
+      <div id="monthTabsContainer" class="grid grid-cols-6 md:grid-cols-12 gap-1 bg-gray-900 p-1.5 rounded-xl text-xs font-medium text-gray-400">
+        <!-- Generated dynamically in JS -->
+      </div>
+
+      <!-- HEADER TITLE -->
+      <h1 class="text-xl font-bold text-gray-800 tracking-tight">
+        Sales & Inquiry Performance Dashboard 
+        <span id="currentPeriodLabel" class="text-gray-500 text-base font-normal">(JANUARY - 2026)</span>
+      </h1>
+
+      <!-- TOP METRIC CARDS -->
+      <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-5 gap-3">
+        
+        <!-- 1. Ad Cost -->
+        <div class="bg-white p-3.5 rounded-xl border border-gray-200 shadow-sm flex justify-between items-center">
+          <div>
+            <p class="text-[11px] font-medium text-gray-500">Ad Cost</p>
+            <div class="flex items-center text-base font-bold text-gray-800 mt-1">
+              ₱ <input type="number" id="adCostInput" oninput="saveCurrentPeriodData()" class="w-20 border-b border-dashed border-gray-300 focus:outline-none focus:border-blue-500 ml-1 font-bold text-sm" placeholder="0.00">
+            </div>
+          </div>
+          <div class="p-2 bg-gray-100 rounded-full text-gray-600">
+            <i data-lucide="philippine-peso" class="w-4 h-4"></i>
+          </div>
+        </div>
+
+        <!-- 2. FB Inquiry Total -->
+        <div class="bg-white p-3.5 rounded-xl border border-gray-200 shadow-sm flex justify-between items-center">
+          <div>
+            <p class="text-[11px] font-medium text-gray-500">FB Inquiry Total <span class="text-[9px] text-blue-600 font-semibold">(Manual)</span></p>
+            <input type="number" id="fbInquiryInput" oninput="saveCurrentPeriodData()" class="w-20 border-b border-dashed border-gray-300 focus:outline-none focus:border-blue-500 mt-1 font-bold text-lg text-gray-800" placeholder="0">
+          </div>
+          <div class="p-2 bg-blue-50 rounded-full text-blue-600">
+            <i data-lucide="facebook" class="w-4 h-4"></i>
+          </div>
+        </div>
+
+        <!-- 3. Ad Run Days -->
+        <div class="bg-white p-3.5 rounded-xl border border-gray-200 shadow-sm flex justify-between items-center">
+          <div>
+            <p class="text-[11px] font-medium text-gray-500">Ad Run Days <span class="text-[9px] text-orange-600 font-semibold">(Manual)</span></p>
+            <div class="flex items-baseline mt-1">
+              <input type="number" id="adDaysInput" oninput="saveCurrentPeriodData()" class="w-16 border-b border-dashed border-gray-300 focus:outline-none focus:border-orange-500 font-bold text-lg text-gray-800" placeholder="0">
+              <span class="text-xs text-gray-500 ml-1 font-semibold">days</span>
+            </div>
+          </div>
+          <div class="p-2 bg-orange-50 rounded-full text-orange-600">
+            <i data-lucide="clock" class="w-4 h-4"></i>
+          </div>
+        </div>
+
+        <!-- 4. Total Sales Value -->
+        <div class="bg-white p-3.5 rounded-xl border border-gray-200 shadow-sm flex justify-between items-center">
+          <div>
+            <p class="text-[11px] font-medium text-gray-500">Total Sales Value</p>
+            <div class="flex items-center text-base font-bold text-gray-800 mt-1">
+              ₱ <input type="number" id="salesValueInput" oninput="saveCurrentPeriodData()" class="w-20 border-b border-dashed border-gray-300 focus:outline-none focus:border-blue-500 ml-1 font-bold text-sm" placeholder="0.00">
+            </div>
+          </div>
+          <div class="p-2 bg-gray-100 rounded-full text-gray-600">
+            <i data-lucide="trending-up" class="w-4 h-4"></i>
+          </div>
+        </div>
+
+        <!-- 5. Closed Deals -->
+        <div class="bg-white p-3.5 rounded-xl border border-gray-200 shadow-sm flex justify-between items-center">
+          <div>
+            <p class="text-[11px] font-medium text-gray-500">Closed Deals <span class="text-[9px] text-green-600 font-semibold">(AUTO)</span></p>
+            <p id="cardClosedDeals" class="text-lg font-bold text-gray-800 mt-1">0</p>
+          </div>
+          <div class="p-2 bg-green-50 rounded-full text-green-600">
+            <i data-lucide="handshake" class="w-4 h-4"></i>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- MAIN DATA TABLE & INSIGHTS SECTION -->
+      <div class="grid grid-cols-1 lg:grid-cols-4 gap-4">
+        
+        <!-- TABLE CONTAINER -->
+        <div class="lg:col-span-3 bg-white border border-gray-200 rounded-xl shadow-sm overflow-hidden">
+          <div class="overflow-x-auto">
+            <table id="performanceTable" class="w-full text-center text-xs border-collapse">
+              <thead>
+                <!-- GROUP HEADERS -->
+                <tr class="bg-gray-50 border-b border-gray-200 font-bold text-gray-700 uppercase">
+                  <th rowspan="2" class="p-2 border-r w-24">DATE</th>
+                  <th colspan="3" class="p-2 border-r bg-green-100 text-green-900">INQUIRY</th>
+                  <th colspan="3" class="p-2 border-r bg-orange-100 text-orange-900">ADS</th>
+                  <th colspan="3" class="p-2 border-r bg-blue-100 text-blue-900">ORGANIC</th>
+                  <th rowspan="2" class="p-2 border-r bg-gray-200 text-gray-800 w-24">CLOSED DEAL <br><span class="text-[10px] text-green-700 font-normal">(AUTO)</span></th>
+                  <th rowspan="2" class="p-2 w-10"></th>
+                </tr>
+                <!-- EDITABLE HEADERS FOR INQUIRY, ADS, AND ORGANIC -->
+                <tr class="border-b border-gray-200 font-semibold text-gray-600">
+                  <!-- INQUIRY EDITABLE HEADERS -->
+                  <th class="p-1 border-r bg-green-50">
+                    <input type="text" id="inqAgent1" oninput="updateAgentName(0, this.value)" class="w-full text-center font-bold bg-transparent text-green-900 focus:outline-blue-500" value="Rose">
+                  </th>
+                  <th class="p-1 border-r bg-green-50">
+                    <input type="text" id="inqAgent2" oninput="updateAgentName(1, this.value)" class="w-full text-center font-bold bg-transparent text-green-900 focus:outline-blue-500" value="Jess">
+                  </th>
+                  <th class="p-1 border-r bg-green-50">
+                    <input type="text" id="inqAgent3" oninput="updateAgentName(2, this.value)" class="w-full text-center font-bold bg-transparent text-green-900 focus:outline-blue-500" value="Marian">
+                  </th>
+
+                  <!-- ADS EDITABLE HEADERS -->
+                  <th class="p-1 border-r bg-orange-50">
+                    <input type="text" id="adsAgent1" oninput="updateAgentName(0, this.value)" class="w-full text-center font-bold bg-transparent text-orange-900 focus:outline-blue-500" value="Rose">
+                  </th>
+                  <th class="p-1 border-r bg-orange-50">
+                    <input type="text" id="adsAgent2" oninput="updateAgentName(1, this.value)" class="w-full text-center font-bold bg-transparent text-orange-900 focus:outline-blue-500" value="Jess">
+                  </th>
+                  <th class="p-1 border-r bg-orange-50">
+                    <input type="text" id="adsAgent3" oninput="updateAgentName(2, this.value)" class="w-full text-center font-bold bg-transparent text-orange-900 focus:outline-blue-500" value="Marian">
+                  </th>
+
+                  <!-- ORGANIC EDITABLE HEADERS -->
+                  <th class="p-1 border-r bg-blue-50">
+                    <input type="text" id="orgAgent1" oninput="updateAgentName(0, this.value)" class="w-full text-center font-bold bg-transparent text-blue-900 focus:outline-blue-500" value="Rose">
+                  </th>
+                  <th class="p-1 border-r bg-blue-50">
+                    <input type="text" id="orgAgent2" oninput="updateAgentName(1, this.value)" class="w-full text-center font-bold bg-transparent text-blue-900 focus:outline-blue-500" value="Jess">
+                  </th>
+                  <th class="p-1 border-r bg-blue-50">
+                    <input type="text" id="orgAgent3" oninput="updateAgentName(2, this.value)" class="w-full text-center font-bold bg-transparent text-blue-900 focus:outline-blue-500" value="Marian">
+                  </th>
+                </tr>
+              </thead>
+              <tbody id="tableBody" class="divide-y divide-gray-200">
+                <!-- Dynamic Entry Rows -->
+              </tbody>
+              <!-- TOTALS FOOTER -->
+              <tfoot class="bg-gray-100 font-bold border-t-2 border-gray-300">
+                <tr>
+                  <td class="p-2 border-r text-left">Global Totals</td>
+                  <td id="tot-inq-1" class="p-2 border-r bg-green-50">0</td>
+                  <td id="tot-inq-2" class="p-2 border-r bg-green-50">0</td>
+                  <td id="tot-inq-3" class="p-2 border-r bg-green-50">0</td>
+
+                  <td id="tot-ads-1" class="p-2 border-r bg-orange-50">0</td>
+                  <td id="tot-ads-2" class="p-2 border-r bg-orange-50">0</td>
+                  <td id="tot-ads-3" class="p-2 border-r bg-orange-50">0</td>
+
+                  <td id="tot-org-1" class="p-2 border-r bg-blue-50">0</td>
+                  <td id="tot-org-2" class="p-2 border-r bg-blue-50">0</td>
+                  <td id="tot-org-3" class="p-2 border-r bg-blue-50">0</td>
+
+                  <td id="tot-closed-deals" class="p-2 border-r bg-gray-200 text-green-800 text-sm">0</td>
+                  <td class="p-2"></td>
+                </tr>
+              </tfoot>
+            </table>
+          </div>
+        </div>
+
+        <!-- KEY INSIGHTS SIDEBAR -->
+        <div class="bg-white p-4 border border-gray-200 rounded-xl shadow-sm flex flex-col">
+          <h3 class="text-xs font-bold text-gray-700 uppercase tracking-wider mb-2">Key Insights</h3>
+          <textarea id="keyInsightsInput" oninput="saveCurrentPeriodData()" placeholder="Write notes, performance highlights, or remarks here..." class="w-full flex-1 border border-gray-200 rounded-lg p-2 text-xs focus:outline-none focus:border-blue-500 resize-none min-h-[150px]"></textarea>
+        </div>
+
+      </div>
+
+    </main>
+  </div>
+
+  <script>
+    const MONTHS = [
+      "JANUARY", "FEBRUARY", "MARCH", "APRIL", "MAY", "JUNE",
+      "JULY", "AUGUST", "SEPTEMBER", "OCTOBER", "NOVEMBER", "DECEMBER"
+    ];
+
+    let currentYear = "2026";
+    let currentMonth = "JANUARY";
+
+    let appStore = JSON.parse(localStorage.getItem('dashboard_store')) || {};
+    let lastActiveAgents = JSON.parse(localStorage.getItem('dashboard_last_agents')) || ["Rose", "Jess", "Marian"];
+
+    document.addEventListener('DOMContentLoaded', () => {
+      lucide.createIcons();
+      renderMonthTabs();
+      loadPeriodData();
+    });
+
+    function renderMonthTabs() {
+      const container = document.getElementById('monthTabsContainer');
+      container.innerHTML = '';
+      
+      MONTHS.forEach(month => {
+        const btn = document.createElement('button');
+        btn.innerText = month;
+        btn.onclick = () => selectMonth(month);
+        btn.className = `py-1.5 rounded text-[10px] font-bold tracking-wider transition ${
+          currentMonth === month 
+            ? 'bg-cyan-500 text-white shadow' 
+            : 'hover:bg-gray-800 text-gray-400'
+        }`;
+        container.appendChild(btn);
+      });
+    }
+
+    function selectMonth(month) {
+      saveCurrentPeriodData();
+      currentMonth = month;
+      renderMonthTabs();
+      loadPeriodData();
+    }
+
+    function changePeriod() {
+      saveCurrentPeriodData();
+      currentYear = document.getElementById('yearSelect').value;
+      loadPeriodData();
+    }
+
+    function getPeriodKey() {
+      return `${currentYear}-${currentMonth}`;
+    }
+
+    // UPDATES AGENT NAMES ACROSS ALL SECTIONS & KEEPS THEM IN SYNC
+    function updateAgentName(agentIndex, newName) {
+      const periodKey = getPeriodKey();
+      
+      if (!appStore[periodKey]) {
+        appStore[periodKey] = { agents: [...lastActiveAgents], rows: [] };
+      }
+      if (!appStore[periodKey].agents) {
+        appStore[periodKey].agents = [...lastActiveAgents];
+      }
+
+      // Update in memory
+      appStore[periodKey].agents[agentIndex] = newName;
+      lastActiveAgents[agentIndex] = newName;
+
+      // Sync all input fields for this agent column (Inquiry, Ads, Organic)
+      const inqEl = document.getElementById(`inqAgent${agentIndex + 1}`);
+      const adsEl = document.getElementById(`adsAgent${agentIndex + 1}`);
+      const orgEl = document.getElementById(`orgAgent${agentIndex + 1}`);
+
+      if (inqEl) inqEl.value = newName;
+      if (adsEl) adsEl.value = newName;
+      if (orgEl) orgEl.value = newName;
+
+      saveCurrentPeriodData();
+    }
+
+    function loadPeriodData() {
+      document.getElementById('currentPeriodLabel').innerText = `(${currentMonth} - ${currentYear})`;
+      
+      const periodKey = getPeriodKey();
+
+      // Carry over agent names if month data doesn't exist yet
+      if (!appStore[periodKey]) {
+        appStore[periodKey] = {
+          agents: [...lastActiveAgents],
+          adCost: '',
+          fbInquiry: '',
+          adDays: '',
+          salesValue: '',
+          insights: '',
+          rows: [ createEmptyRowData("01-" + currentMonth.substring(0,3)) ]
+        };
+      }
+
+      const periodData = appStore[periodKey];
+      const agents = periodData.agents || [...lastActiveAgents];
+
+      // Populate Inquiry, Ads, and Organic Headers
+      for (let i = 0; i < 3; i++) {
+        const name = agents[i] || `Agent ${i+1}`;
+        document.getElementById(`inqAgent${i + 1}`).value = name;
+        document.getElementById(`adsAgent${i + 1}`).value = name;
+        document.getElementById(`orgAgent${i + 1}`).value = name;
+      }
+
+      document.getElementById('adCostInput').value = periodData.adCost || '';
+      document.getElementById('fbInquiryInput').value = periodData.fbInquiry || '';
+      document.getElementById('adDaysInput').value = periodData.adDays || '';
+      document.getElementById('salesValueInput').value = periodData.salesValue || '';
+      document.getElementById('keyInsightsInput').value = periodData.insights || '';
+
+      renderTableRows(periodData.rows);
+      calculateTotals();
+    }
+
+    function createEmptyRowData(dateLabel = "") {
+      return {
+        id: Date.now() + Math.random(),
+        date: dateLabel,
+        inq1: 0, inq2: 0, inq3: 0,
+        ads1: 0, ads2: 0, ads3: 0,
+        org1: 0, org2: 0, org3: 0,
+        closedDeal: 0
+      };
+    }
+
+    function renderTableRows(rows) {
+      const tbody = document.getElementById('tableBody');
+      tbody.innerHTML = '';
+
+      rows.forEach((row, idx) => {
+        const sumInq = Number(row.inq1 || 0) + Number(row.inq2 || 0) + Number(row.inq3 || 0);
+        const sumAds = Number(row.ads1 || 0) + Number(row.ads2 || 0) + Number(row.ads3 || 0);
+        const sumOrg = Number(row.org1 || 0) + Number(row.org2 || 0) + Number(row.org3 || 0);
+
+        const trHeader = document.createElement('tr');
+        trHeader.className = "bg-gray-50/70 border-t border-gray-200 font-semibold";
+        trHeader.innerHTML = `
+          <td class="p-1 border-r text-gray-500">
+            <input type="text" value="${row.date}" onchange="updateRowField(${idx}, 'date', this.value)" placeholder="e.g. 25-May" class="w-full text-center bg-transparent focus:outline-none font-bold">
+          </td>
+          <td colspan="3" class="p-1 border-r text-green-800 bg-green-50/30">${sumInq}</td>
+          <td colspan="3" class="p-1 border-r text-orange-800 bg-orange-50/30">${sumAds}</td>
+          <td colspan="3" class="p-1 border-r text-blue-800 bg-blue-50/30">${sumOrg}</td>
+          <td class="p-1 border-r bg-gray-100 font-bold">${row.closedDeal}</td>
+          <td class="p-1">
+            <button onclick="deleteRow(${idx})" class="text-red-500 hover:text-red-700 p-1">
+              <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
+            </button>
+          </td>
+        `;
+
+        const trInputs = document.createElement('tr');
+        trInputs.className = "border-b border-gray-200";
+        trInputs.innerHTML = `
+          <td class="p-1 border-r font-medium text-gray-400 text-[11px]">Inputs</td>
+          
+          <td class="p-1 border-r bg-green-50/10"><input type="number" min="0" value="${row.inq1 || 0}" oninput="updateRowField(${idx}, 'inq1', this.value)" class="w-full text-center focus:outline-blue-500 bg-transparent"></td>
+          <td class="p-1 border-r bg-green-50/10"><input type="number" min="0" value="${row.inq2 || 0}" oninput="updateRowField(${idx}, 'inq2', this.value)" class="w-full text-center focus:outline-blue-500 bg-transparent"></td>
+          <td class="p-1 border-r bg-green-50/10"><input type="number" min="0" value="${row.inq3 || 0}" oninput="updateRowField(${idx}, 'inq3', this.value)" class="w-full text-center focus:outline-blue-500 bg-transparent"></td>
+
+          <td class="p-1 border-r bg-orange-50/10"><input type="number" min="0" value="${row.ads1 || 0}" oninput="updateRowField(${idx}, 'ads1', this.value)" class="w-full text-center focus:outline-blue-500 bg-transparent"></td>
+          <td class="p-1 border-r bg-orange-50/10"><input type="number" min="0" value="${row.ads2 || 0}" oninput="updateRowField(${idx}, 'ads2', this.value)" class="w-full text-center focus:outline-blue-500 bg-transparent"></td>
+          <td class="p-1 border-r bg-orange-50/10"><input type="number" min="0" value="${row.ads3 || 0}" oninput="updateRowField(${idx}, 'ads3', this.value)" class="w-full text-center focus:outline-blue-500 bg-transparent"></td>
+
+          <td class="p-1 border-r bg-blue-50/10"><input type="number" min="0" value="${row.org1 || 0}" oninput="updateRowField(${idx}, 'org1', this.value)" class="w-full text-center focus:outline-blue-500 bg-transparent"></td>
+          <td class="p-1 border-r bg-blue-50/10"><input type="number" min="0" value="${row.org2 || 0}" oninput="updateRowField(${idx}, 'org2', this.value)" class="w-full text-center focus:outline-blue-500 bg-transparent"></td>
+          <td class="p-1 border-r bg-blue-50/10"><input type="number" min="0" value="${row.org3 || 0}" oninput="updateRowField(${idx}, 'org3', this.value)" class="w-full text-center focus:outline-blue-500 bg-transparent"></td>
+
+          <td class="p-1 border-r bg-gray-100 font-bold text-gray-700">
+            <input type="number" min="0" value="${row.closedDeal || 0}" oninput="updateRowField(${idx}, 'closedDeal', this.value)" class="w-full text-center bg-transparent focus:outline-none font-bold text-green-700">
+          </td>
+          <td class="p-1"></td>
+        `;
+
+        tbody.appendChild(trHeader);
+        tbody.appendChild(trInputs);
+      });
+
+      lucide.createIcons();
+    }
+
+    function updateRowField(index, field, value) {
+      const periodKey = getPeriodKey();
+      if (!appStore[periodKey]) return;
+
+      appStore[periodKey].rows[index][field] = value;
+      renderTableRows(appStore[periodKey].rows);
+      calculateTotals();
+    }
+
+    function addNewEntryRow() {
+      const periodKey = getPeriodKey();
+      if (!appStore[periodKey]) {
+        appStore[periodKey] = { agents: [...lastActiveAgents], adCost: '', fbInquiry: '', adDays: '', salesValue: '', insights: '', rows: [] };
+      }
+      appStore[periodKey].rows.push(createEmptyRowData());
+      renderTableRows(appStore[periodKey].rows);
+      calculateTotals();
+    }
+
+    function deleteRow(index) {
+      const periodKey = getPeriodKey();
+      if (!appStore[periodKey]) return;
+      appStore[periodKey].rows.splice(index, 1);
+      renderTableRows(appStore[periodKey].rows);
+      calculateTotals();
+    }
+
+    function calculateTotals() {
+      const periodKey = getPeriodKey();
+      const rows = appStore[periodKey] ? appStore[periodKey].rows : [];
+
+      let totals = {
+        inq1: 0, inq2: 0, inq3: 0,
+        ads1: 0, ads2: 0, ads3: 0,
+        org1: 0, org2: 0, org3: 0,
+        closedDeals: 0
+      };
+
+      rows.forEach(r => {
+        totals.inq1 += Number(r.inq1 || 0);
+        totals.inq2 += Number(r.inq2 || 0);
+        totals.inq3 += Number(r.inq3 || 0);
+
+        totals.ads1 += Number(r.ads1 || 0);
+        totals.ads2 += Number(r.ads2 || 0);
+        totals.ads3 += Number(r.ads3 || 0);
+
+        totals.org1 += Number(r.org1 || 0);
+        totals.org2 += Number(r.org2 || 0);
+        totals.org3 += Number(r.org3 || 0);
+
+        totals.closedDeals += Number(r.closedDeal || 0);
+      });
+
+      document.getElementById('tot-inq-1').innerText = totals.inq1;
+      document.getElementById('tot-inq-2').innerText = totals.inq2;
+      document.getElementById('tot-inq-3').innerText = totals.inq3;
+
+      document.getElementById('tot-ads-1').innerText = totals.ads1;
+      document.getElementById('tot-ads-2').innerText = totals.ads2;
+      document.getElementById('tot-ads-3').innerText = totals.ads3;
+
+      document.getElementById('tot-org-1').innerText = totals.org1;
+      document.getElementById('tot-org-2').innerText = totals.org2;
+      document.getElementById('tot-org-3').innerText = totals.org3;
+
+      document.getElementById('tot-closed-deals').innerText = totals.closedDeals;
+      document.getElementById('cardClosedDeals').innerText = totals.closedDeals;
+    }
+
+    function saveCurrentPeriodData() {
+      const periodKey = getPeriodKey();
+      if (!appStore[periodKey]) {
+        appStore[periodKey] = { rows: [] };
+      }
+
+      const activeAgents = [
+        document.getElementById('inqAgent1').value,
+        document.getElementById('inqAgent2').value,
+        document.getElementById('inqAgent3').value
+      ];
+
+      appStore[periodKey].agents = activeAgents;
+      lastActiveAgents = activeAgents;
+
+      appStore[periodKey].adCost = document.getElementById('adCostInput').value;
+      appStore[periodKey].fbInquiry = document.getElementById('fbInquiryInput').value;
+      appStore[periodKey].adDays = document.getElementById('adDaysInput').value;
+      appStore[periodKey].salesValue = document.getElementById('salesValueInput').value;
+      appStore[periodKey].insights = document.getElementById('keyInsightsInput').value;
+
+      localStorage.setItem('dashboard_store', JSON.stringify(appStore));
+      localStorage.setItem('dashboard_last_agents', JSON.stringify(lastActiveAgents));
+    }
+
+    function saveAllData() {
+      saveCurrentPeriodData();
+      alert(`Data successfully saved for ${currentMonth} - ${currentYear}!`);
+    }
+
+    function exportToExcel() {
+      const wb = XLSX.utils.book_new();
+      const periodKey = getPeriodKey();
+      const periodData = appStore[periodKey] || { rows: [] };
+      const agents = periodData.agents || lastActiveAgents;
+
+      let summaryData = [{
+        "Ad Cost": periodData.adCost,
+        "FB Inquiry Total": periodData.fbInquiry,
+        "Ad Run Days": periodData.adDays,
+        "Total Sales Value": periodData.salesValue,
+        "Key Insights": periodData.insights
+      }];
+
+      let dataForExcel = periodData.rows.map(r => ({
+        "Date": r.date,
+        [`Inquiry (${agents[0]})`]: r.inq1,
+        [`Inquiry (${agents[1]})`]: r.inq2,
+        [`Inquiry (${agents[2]})`]: r.inq3,
+        [`Ads (${agents[0]})`]: r.ads1,
+        [`Ads (${agents[1]})`]: r.ads2,
+        [`Ads (${agents[2]})`]: r.ads3,
+        [`Organic (${agents[0]})`]: r.org1,
+        [`Organic (${agents[1]})`]: r.org2,
+        [`Organic (${agents[2]})`]: r.org3,
+        "Closed Deals": r.closedDeal
+      }));
+
+      const wsSummary = XLSX.utils.json_to_sheet(summaryData);
+      const wsDetails = XLSX.utils.json_to_sheet(dataForExcel);
+
+      XLSX.utils.book_append_sheet(wb, wsSummary, "Summary");
+      XLSX.utils.book_append_sheet(wb, wsDetails, "Daily Breakdowns");
+      
+      XLSX.writeFile(wb, `Performance_Report_${currentMonth}_${currentYear}.xlsx`);
+    }
+  </script>
+</body>
+</html>
