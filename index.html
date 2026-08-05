@@ -3,550 +3,1371 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Sales & Inquiry Performance Dashboard</title>
-  <script src="https://cdn.tailwindcss.com"></script>
-  <!-- Lucide Icons -->
-  <script src="https://unpkg.com/lucide@latest"></script>
-  <!-- XLSX Library para sa Export Excel -->
+  <title>Unique Apparel PH - Sales Report Dashboard</title>
+  <!-- Chart.js for Visualization -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <!-- Chart.js Datalabels Plugin for Percentage inside slices -->
+  <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.2.0"></script>
+  <!-- FontAwesome for Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <!-- SheetJS Library for Excel Export -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+  
+  <style>
+    :root {
+      --bg-dark: #0d1117;
+      --card-bg: #161b22;
+      --accent-blue: #38bdf8;
+      --accent-green: #4ade80;
+      --accent-purple: #c084fc;
+      --accent-orange: #fb923c;
+      --accent-red: #f87171;
+      --accent-yellow: #facc15;
+      --text-main: #f3f4f6;
+      --text-muted: #9ca3af;
+      --border-color: #30363d;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    }
+
+    body {
+      background-color: var(--bg-dark);
+      color: var(--text-main);
+      padding: 20px;
+    }
+
+    /* Header & Controls */
+    header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding-bottom: 20px;
+      border-bottom: 1px solid var(--border-color);
+      margin-bottom: 20px;
+      flex-wrap: wrap;
+      gap: 15px;
+    }
+
+    .brand-container {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .brand-icon {
+      background: linear-gradient(135deg, #e11d48, #3b82f6, #10b981);
+      width: 45px;
+      height: 45px;
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.4rem;
+      color: #ffffff;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+    }
+
+    .brand-title {
+      font-size: 1.5rem;
+      font-weight: 900;
+      letter-spacing: 0.5px;
+      text-transform: uppercase;
+      background: linear-gradient(90deg, #ef4444, #3b82f6, #eab308, #22c55e);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .brand-text p {
+      font-size: 0.85rem;
+      color: var(--accent-blue);
+      font-style: italic;
+      margin-top: 2px;
+    }
+
+    .year-selector {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      background: var(--card-bg);
+      padding: 8px 16px;
+      border-radius: 8px;
+      border: 1px solid var(--border-color);
+    }
+
+    .year-selector label {
+      font-weight: 600;
+      color: var(--text-muted);
+    }
+
+    .year-selector select {
+      background: transparent;
+      color: var(--accent-blue);
+      border: none;
+      font-size: 1.1rem;
+      font-weight: bold;
+      outline: none;
+      cursor: pointer;
+    }
+
+    .year-selector select option {
+      background: var(--card-bg);
+      color: var(--text-main);
+    }
+
+    /* Month Navigation Bar */
+    .month-nav {
+      display: flex;
+      gap: 8px;
+      overflow-x: auto;
+      padding-bottom: 10px;
+      margin-bottom: 25px;
+    }
+
+    .month-btn {
+      background: var(--card-bg);
+      color: var(--text-muted);
+      border: 1px solid var(--border-color);
+      padding: 8px 16px;
+      border-radius: 6px;
+      cursor: pointer;
+      white-space: nowrap;
+      transition: all 0.2s ease;
+      font-weight: 600;
+    }
+
+    .month-btn:hover {
+      border-color: var(--accent-blue);
+      color: #fff;
+    }
+
+    .month-btn.active {
+      background: var(--accent-blue);
+      color: #0d1117;
+      border-color: var(--accent-blue);
+      font-weight: 700;
+    }
+
+    /* Top Summary KPI Cards */
+    .kpi-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: 15px;
+      margin-bottom: 25px;
+    }
+
+    .kpi-card {
+      background: var(--card-bg);
+      border-radius: 8px;
+      padding: 18px;
+      border: 1px solid var(--border-color);
+      text-align: center;
+    }
+
+    .kpi-card h4 {
+      font-size: 0.8rem;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-bottom: 8px;
+    }
+
+    .kpi-card .value {
+      font-size: 1.6rem;
+      font-weight: bold;
+      color: var(--accent-blue);
+    }
+
+    /* Main Dashboard Grid */
+    .dashboard-grid {
+      display: grid;
+      grid-template-columns: 2fr 1fr;
+      gap: 20px;
+    }
+
+    @media (max-width: 1024px) {
+      .dashboard-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .section-card {
+      background: var(--card-bg);
+      border-radius: 8px;
+      border: 1px solid var(--border-color);
+      padding: 20px;
+      margin-bottom: 20px;
+    }
+
+    .section-title {
+      font-size: 1.1rem;
+      font-weight: 700;
+      margin-bottom: 15px;
+      color: #fff;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    /* Table Styling */
+    .table-container {
+      max-height: 480px;
+      overflow-y: auto;
+      border: 1px solid var(--border-color);
+      border-radius: 6px;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.88rem;
+    }
+
+    th {
+      position: sticky;
+      top: 0;
+      background: #21262d;
+      color: var(--text-muted);
+      text-align: left;
+      padding: 10px;
+      border-bottom: 1px solid var(--border-color);
+    }
+
+    td {
+      padding: 8px 10px;
+      border-bottom: 1px solid var(--border-color);
+    }
+
+    tr:hover {
+      background-color: rgba(255, 255, 255, 0.03);
+    }
+
+    input[type="text"], input[type="number"], input[type="date"] {
+      width: 100%;
+      background: #0d1117;
+      border: 1px solid var(--border-color);
+      color: var(--text-main);
+      padding: 5px 8px;
+      border-radius: 4px;
+      outline: none;
+      font-weight: 600;
+    }
+
+    input[type="text"]:focus, input[type="number"]:focus, input[type="date"]:focus {
+      border-color: var(--accent-blue);
+      background: #1c2128;
+    }
+
+    /* Product Sales Section Inputs */
+    .date-picker-bar {
+      display: flex;
+      gap: 15px;
+      align-items: center;
+      background: #0d1117;
+      padding: 12px;
+      border-radius: 6px;
+      border: 1px solid var(--border-color);
+      margin-bottom: 15px;
+      flex-wrap: wrap;
+    }
+
+    .date-picker-group {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .date-picker-group label {
+      font-size: 0.8rem;
+      color: var(--text-muted);
+      font-weight: bold;
+    }
+
+    .date-picker-group input {
+      width: auto;
+    }
+
+    .rank-badge {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 26px;
+      height: 26px;
+      border-radius: 50%;
+      font-weight: bold;
+      font-size: 0.8rem;
+    }
+
+    .rank-1 { background: #eab308; color: #0d1117; }
+    .rank-2 { background: #94a3b8; color: #0d1117; }
+    .rank-3 { background: #b45309; color: #ffffff; }
+    .rank-other { background: var(--border-color); color: var(--text-muted); }
+
+    /* Deductions & Summary Breakdown */
+    .summary-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-bottom: 15px;
+    }
+
+    .summary-table th, .summary-table td {
+      padding: 10px;
+      text-align: left;
+    }
+
+    /* Bottom Metric Highlight Bar */
+    .metrics-bar {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+      gap: 10px;
+      background: #0d1117;
+      padding: 15px;
+      border-radius: 8px;
+      border: 1px solid var(--border-color);
+      margin-top: 15px;
+    }
+
+    .metric-item {
+      text-align: center;
+    }
+
+    .metric-item label {
+      display: block;
+      font-size: 0.75rem;
+      color: var(--text-muted);
+      margin-bottom: 4px;
+      text-transform: uppercase;
+    }
+
+    .metric-item span {
+      font-size: 1.1rem;
+      font-weight: bold;
+    }
+
+    .chart-box {
+      position: relative;
+      height: 280px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+
+    .btn-action {
+      background: var(--accent-green);
+      color: #0d1117;
+      border: none;
+      padding: 10px 20px;
+      border-radius: 6px;
+      font-weight: bold;
+      cursor: pointer;
+      transition: opacity 0.2s;
+    }
+
+    .btn-excel {
+      background: #107c41; /* Excel Green */
+      color: #ffffff;
+      border: none;
+      padding: 10px 20px;
+      border-radius: 6px;
+      font-weight: bold;
+      cursor: pointer;
+      transition: opacity 0.2s;
+    }
+
+    .btn-action:hover, .btn-excel:hover {
+      opacity: 0.9;
+    }
+
+    /* IMAGE ATTACHMENTS SECTION STYLES */
+    .upload-box {
+      border: 2px dashed var(--border-color);
+      padding: 15px;
+      text-align: center;
+      border-radius: 8px;
+      background: #0d1117;
+      cursor: pointer;
+      margin-bottom: 20px;
+      transition: border-color 0.2s;
+    }
+
+    .upload-box:hover {
+      border-color: var(--accent-blue);
+    }
+
+    .image-grid {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 20px;
+      align-items: flex-start;
+    }
+
+    .image-card {
+      position: relative;
+      border-radius: 8px;
+      overflow: hidden;
+      border: 1px solid var(--border-color);
+      background: #0d1117;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+      max-width: 100%;
+    }
+
+    .image-card img {
+      display: block;
+      width: auto;
+      height: auto;
+      max-width: 100%;
+      max-height: 400px;
+      object-fit: contain;
+      cursor: pointer;
+      transition: transform 0.2s;
+    }
+
+    .delete-img-btn {
+      position: absolute;
+      top: 8px;
+      right: 8px;
+      background: rgba(248, 113, 113, 0.9);
+      color: #fff;
+      border: none;
+      border-radius: 50%;
+      width: 26px;
+      height: 26px;
+      cursor: pointer;
+      font-size: 0.85rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.5);
+      z-index: 10;
+    }
+
+    /* Image Lightbox Modal */
+    .image-modal {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0,0,0,0.85);
+      z-index: 1000;
+      justify-content: center;
+      align-items: center;
+    }
+
+    .image-modal img {
+      max-width: 90%;
+      max-height: 90%;
+      border-radius: 8px;
+    }
+  </style>
 </head>
-<body class="bg-gray-100 font-sans text-gray-800 antialiased">
+<body>
 
-  <div class="flex h-screen overflow-hidden">
+  <!-- Header Section (Pure CSS Styling) -->
+  <header>
+    <div class="brand-container">
+      <div class="brand-icon">
+        <i class="fa-solid fa-shirt"></i>
+      </div>
+      <div class="brand-text">
+        <div class="brand-title">UNIQUE APPAREL PH</div>
+        <p>"Wear the fun, feel comfort" - Control Software System</p>
+      </div>
+    </div>
+
+    <div style="display: flex; gap: 10px; align-items: center;">
+      <div class="year-selector">
+        <label for="yearSelect"><i class="fa-regular fa-calendar"></i> YEAR:</label>
+        <select id="yearSelect" onchange="changeYear()">
+          <option value="2024">2024</option>
+          <option value="2025">2025</option>
+          <option value="2026" selected>2026</option>
+          <option value="2027">2027</option>
+          <option value="2028">2028</option>
+        </select>
+      </div>
+      <button class="btn-excel" onclick="exportToExcel()"><i class="fa-solid fa-file-excel"></i> Export Excel</button>
+      <button class="btn-action" onclick="saveCurrentData()"><i class="fa-solid fa-floppy-disk"></i> Save Data</button>
+    </div>
+  </header>
+
+  <!-- Month Selection Navigation -->
+  <div class="month-nav" id="monthNav"></div>
+
+  <!-- KPI Top Overview Cards -->
+  <div class="kpi-grid">
+    <div class="kpi-card">
+      <h4>Monthly Gross Sales</h4>
+      <div class="value" id="kpiGrossSales">₱0.00</div>
+    </div>
+    <div class="kpi-card">
+      <h4>Total Orders</h4>
+      <div class="value" id="kpiTotalOrders">0</div>
+    </div>
+    <div class="kpi-card">
+      <h4>Remaining Orders</h4>
+      <div class="value" id="kpiRemainingOrders" style="color: var(--accent-green);">0</div>
+    </div>
+    <div class="kpi-card">
+      <h4>Cancelled Volume</h4>
+      <div class="value" id="kpiCancelledVolume" style="color: var(--accent-orange);">0</div>
+    </div>
+    <div class="kpi-card">
+      <h4>Returned Volume</h4>
+      <div class="value" id="kpiReturnedVolume" style="color: var(--accent-red);">0</div>
+    </div>
+  </div>
+
+  <!-- Main Content Dashboard Grid -->
+  <div class="dashboard-grid">
     
-    <!-- SIDEBAR -->
-    <aside class="w-16 bg-white border-r border-gray-200 flex flex-col items-center py-4 space-y-6">
-      <button class="p-2 text-gray-600 hover:bg-gray-100 rounded-lg">
-        <i data-lucide="menu" class="w-6 h-6"></i>
-      </button>
-      <button class="p-2 bg-blue-50 text-blue-600 rounded-lg flex flex-col items-center text-xs font-semibold">
-        <i data-lucide="layout-dashboard" class="w-6 h-6"></i>
-        <span>Dashboard</span>
-      </button>
-    </aside>
+    <!-- Left Column: Daily Tracker Logs Table + Images + Product Sales Input -->
+    <div>
+      <!-- Daily Tracker Card -->
+      <div class="section-card">
+        <div class="section-title">
+          <i class="fa-solid fa-list-check" style="color: var(--accent-blue);"></i>
+          <span id="trackerTitle">DAILY RECORD TRACKER</span>
+        </div>
+        <div class="table-container">
+          <table>
+            <thead>
+              <tr>
+                <th>Calendar Date</th>
+                <th>Total Orders</th>
+                <th>Cancelled</th>
+                <th>Returned</th>
+                <th>Daily Gross Income</th>
+                <th>Remaining Orders</th>
+                <th>Remaining Income</th>
+              </tr>
+            </thead>
+            <tbody id="trackerTableBody"></tbody>
+          </table>
+        </div>
+      </div>
 
-    <!-- MAIN CONTENT AREA -->
-    <main class="flex-1 overflow-y-auto p-6 space-y-4">
-      
-      <!-- TOP NAVIGATION BAR -->
-      <div class="bg-gray-900 text-white p-3 rounded-xl flex flex-wrap items-center justify-between gap-4 shadow-sm">
-        <div class="flex items-center space-x-3">
-          <!-- YEAR SELECTOR -->
-          <div class="flex items-center bg-gray-800 px-3 py-1.5 rounded-lg border border-gray-700">
-            <i data-lucide="calendar" class="w-4 h-4 mr-2 text-blue-400"></i>
-            <span class="text-xs font-bold text-gray-400 mr-2">YEAR:</span>
-            <select id="yearSelect" onchange="changePeriod()" class="bg-transparent text-blue-400 font-bold text-sm focus:outline-none cursor-pointer">
-              <option value="2026" class="bg-gray-900 text-white">2026</option>
-              <option value="2027" class="bg-gray-900 text-white">2027</option>
-              <option value="2028" class="bg-gray-900 text-white">2028</option>
-              <option value="2029" class="bg-gray-900 text-white">2029</option>
-              <option value="2030" class="bg-gray-900 text-white">2030</option>
-            </select>
+      <!-- PRODUCT SALES INPUT SECTION -->
+      <div class="section-card">
+        <div class="section-title">
+          <i class="fa-solid fa-boxes-packing" style="color: var(--accent-yellow);"></i>
+          PRODUCT SALES INPUT
+        </div>
+
+        <!-- Date Range Controls -->
+        <div class="date-picker-bar">
+          <div class="date-picker-group">
+            <label>START DATE:</label>
+            <input type="date" id="prodStartDate">
           </div>
-
-          <button onclick="exportToExcel()" class="flex items-center bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold px-3 py-2 rounded-lg transition">
-            <i data-lucide="file-spreadsheet" class="w-4 h-4 mr-1.5"></i> Export Excel
+          <div class="date-picker-group">
+            <label>END DATE:</label>
+            <input type="date" id="prodEndDate">
+          </div>
+          <button class="btn-action" style="padding: 6px 14px; font-size: 0.85rem;" onclick="saveProductSalesBatch()">
+            <i class="fa-solid fa-plus"></i> Record Batch
           </button>
-
-          <button onclick="saveAllData()" class="flex items-center bg-emerald-500 hover:bg-emerald-600 text-white text-xs font-semibold px-3 py-2 rounded-lg transition">
-            <i data-lucide="save" class="w-4 h-4 mr-1.5"></i> Save Data
-          </button>
         </div>
 
-        <button onclick="addNewEntryRow()" class="flex items-center bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold px-4 py-2 rounded-lg transition shadow">
-          <i data-lucide="plus" class="w-4 h-4 mr-1"></i> Add Entry
-        </button>
+        <!-- Inputs Table (13 Products) -->
+        <div class="table-container" style="max-height: 320px;">
+          <table>
+            <thead>
+              <tr>
+                <th style="width: 60%;">Product Name</th>
+                <th style="width: 40%;">Total Sold (Pcs)</th>
+              </tr>
+            </thead>
+            <tbody id="productInputTableBody"></tbody>
+          </table>
+        </div>
       </div>
 
-      <!-- MONTH TABS -->
-      <div id="monthTabsContainer" class="grid grid-cols-6 md:grid-cols-12 gap-1 bg-gray-900 p-1.5 rounded-xl text-xs font-medium text-gray-400">
-        <!-- Generated dynamically in JS -->
+      <!-- OVERALL RANKING & SALES SUMMARY -->
+      <div class="section-card">
+        <div class="section-title">
+          <i class="fa-solid fa-trophy" style="color: var(--accent-yellow);"></i>
+          OVERALL PRODUCT SALES & RANKING
+        </div>
+        <div class="table-container" style="max-height: 360px;">
+          <table>
+            <thead>
+              <tr>
+                <th style="width: 20%; text-align: center;">Rank</th>
+                <th style="width: 50%;">Product Name</th>
+                <th style="width: 30%;">Overall Total Sold</th>
+              </tr>
+            </thead>
+            <tbody id="overallSummaryTableBody"></tbody>
+          </table>
+        </div>
       </div>
 
-      <!-- HEADER TITLE -->
-      <h1 class="text-xl font-bold text-gray-800 tracking-tight">
-        Sales & Inquiry Performance Dashboard 
-        <span id="currentPeriodLabel" class="text-gray-500 text-base font-normal">(JANUARY - 2026)</span>
-      </h1>
+      <!-- MONTHLY ATTACHMENTS CARD -->
+      <div class="section-card">
+        <div class="section-title">
+          <i class="fa-solid fa-images" style="color: var(--accent-blue);"></i>
+          MONTHLY PROOF & ATTACHMENTS (<span id="imageCount">0</span>/5)
+        </div>
+        <div class="upload-box" onclick="document.getElementById('imageUploadInput').click()">
+          <i class="fa-solid fa-cloud-arrow-up" style="font-size: 1.5rem; color: var(--accent-blue); margin-bottom: 5px;"></i>
+          <p style="font-size: 0.85rem; color: var(--text-muted);">Click or Drag images to upload (Max 5)</p>
+          <input type="file" id="imageUploadInput" accept="image/*" multiple style="display: none;" onchange="handleImageUpload(event)">
+        </div>
+        <div class="image-grid" id="imageGridContainer"></div>
+      </div>
+    </div>
 
-      <!-- TOP METRIC CARDS -->
-      <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-5 gap-3">
-        
-        <!-- 1. Ad Cost -->
-        <div class="bg-white p-3.5 rounded-xl border border-gray-200 shadow-sm flex justify-between items-center">
-          <div>
-            <p class="text-[11px] font-medium text-gray-500">Ad Cost</p>
-            <div class="flex items-center text-base font-bold text-gray-800 mt-1">
-              ₱ <input type="number" id="adCostInput" oninput="saveCurrentPeriodData()" class="w-20 border-b border-dashed border-gray-300 focus:outline-none focus:border-blue-500 ml-1 font-bold text-sm" placeholder="0.00">
-            </div>
+    <!-- Right Column: Breakdown & Visual Chart -->
+    <div>
+      <!-- Expenses & Breakdown Card -->
+      <div class="section-card">
+        <div class="section-title">
+          <i class="fa-solid fa-chart-pie" style="color: var(--accent-purple);"></i>
+          FINANCIAL BREAKDOWN
+        </div>
+        <table class="summary-table">
+          <thead>
+            <tr>
+              <th>DESCRIPTON</th>
+              <th>AMOUNT</th>
+              <th>PERCENTAGE</th>
+              <th>DISCREPENCY</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><strong>TOTAL GROSS SALES</strong></td>
+              <td><span id="sumGrossSales">₱0.00</span></td>
+              <td>100%</td>
+              <td>
+                <input type="text" id="inputDiscrepancy" value="₱0.00" 
+                  onfocus="unformatInput(this)" 
+                  onblur="formatInputCurrency(this, 'discrepancy')"
+                  onkeydown="handleKeyNavigation(event, this)">
+              </td>
+            </tr>
+            <tr>
+              <td>TIKTOK FEES</td>
+              <td>
+                <input type="text" id="inputTiktokFees" value="₱0.00" 
+                  onfocus="unformatInput(this)" 
+                  onblur="formatInputCurrency(this, 'tiktokFees')"
+                  onkeydown="handleKeyNavigation(event, this)">
+              </td>
+              <td><span id="pctTiktokFees">0%</span></td>
+              <td></td>
+            </tr>
+            <tr>
+              <td>TIKTOK ADJUSTMENT</td>
+              <td>
+                <input type="text" id="inputTiktokAdj" value="₱0.00" 
+                  onfocus="unformatInput(this)" 
+                  onblur="formatInputCurrency(this, 'tiktokAdj')"
+                  onkeydown="handleKeyNavigation(event, this)">
+              </td>
+              <td><span id="pctTiktokAdj">0%</span></td>
+              <td></td>
+            </tr>
+            <tr>
+              <td>ADS EXPENSE</td>
+              <td>
+                <input type="text" id="inputAdsExpense" value="₱0.00" 
+                  onfocus="unformatInput(this)" 
+                  onblur="formatInputCurrency(this, 'adsExpense')"
+                  onkeydown="handleKeyNavigation(event, this)">
+              </td>
+              <td><span id="pctAdsExpense">0%</span></td>
+              <td></td>
+            </tr>
+            <tr style="border-top: 1px solid var(--border-color); font-weight: bold;">
+              <td>TOTAL DEDUCTIONS</td>
+              <td><span id="sumTotalDeductions" style="color: var(--accent-red);">₱0.00</span></td>
+              <td><span id="pctTotalDeductions">0%</span></td>
+              <td></td>
+            </tr>
+            <tr>
+              <td>LIVE SELLER</td>
+              <td>
+                <input type="text" id="inputLiveSeller" value="₱0.00" 
+                  onfocus="unformatInput(this)" 
+                  onblur="formatInputCurrency(this, 'liveSeller')"
+                  onkeydown="handleKeyNavigation(event, this)">
+              </td>
+              <td><span id="pctLiveSeller">0%</span></td>
+              <td></td>
+            </tr>
+            <tr style="border-top: 1px dotted var(--border-color); font-weight: bold;">
+              <td style="color: var(--accent-green);">REMAINING FOR PRODUCTION</td>
+              <td><span id="sumProduction" style="color: var(--accent-green);">₱0.00</span></td>
+              <td><span id="pctProduction">0%</span></td>
+              <td></td>
+            </tr>
+          </tbody>
+        </table>
+
+        <!-- Metrics Indicator Bar -->
+        <div class="metrics-bar">
+          <div class="metric-item">
+            <label>TOTAL ORDERS VOLUME</label>
+            <span id="metricTotalOrders" style="color: var(--text-main);">0</span>
           </div>
-          <div class="p-2 bg-gray-100 rounded-full text-gray-600">
-            <i data-lucide="philippine-peso" class="w-4 h-4"></i>
+          <div class="metric-item">
+            <label>SALE PER PARCEL</label>
+            <span id="metricSalePerParcel" style="color: var(--accent-blue);">₱0.00</span>
+          </div>
+          <div class="metric-item">
+            <label>TIKTOK PER ORDER</label>
+            <span id="metricTiktokPerOrder" style="color: var(--accent-orange);">₱0.00</span>
+          </div>
+          <div class="metric-item">
+            <label>LIVE SELLER</label>
+            <span id="metricLiveSellerPerOrder" style="color: var(--accent-purple);">₱0.00</span>
+          </div>
+          <div class="metric-item">
+            <label>PRODUCTION</label>
+            <span id="metricProductionPerOrder" style="color: var(--accent-green);">₱0.00</span>
           </div>
         </div>
-
-        <!-- 2. FB Inquiry Total -->
-        <div class="bg-white p-3.5 rounded-xl border border-gray-200 shadow-sm flex justify-between items-center">
-          <div>
-            <p class="text-[11px] font-medium text-gray-500">FB Inquiry Total <span class="text-[9px] text-blue-600 font-semibold">(Manual)</span></p>
-            <input type="number" id="fbInquiryInput" oninput="saveCurrentPeriodData()" class="w-20 border-b border-dashed border-gray-300 focus:outline-none focus:border-blue-500 mt-1 font-bold text-lg text-gray-800" placeholder="0">
-          </div>
-          <div class="p-2 bg-blue-50 rounded-full text-blue-600">
-            <i data-lucide="facebook" class="w-4 h-4"></i>
-          </div>
-        </div>
-
-        <!-- 3. Ad Run Days -->
-        <div class="bg-white p-3.5 rounded-xl border border-gray-200 shadow-sm flex justify-between items-center">
-          <div>
-            <p class="text-[11px] font-medium text-gray-500">Ad Run Days <span class="text-[9px] text-orange-600 font-semibold">(Manual)</span></p>
-            <div class="flex items-baseline mt-1">
-              <input type="number" id="adDaysInput" oninput="saveCurrentPeriodData()" class="w-16 border-b border-dashed border-gray-300 focus:outline-none focus:border-orange-500 font-bold text-lg text-gray-800" placeholder="0">
-              <span class="text-xs text-gray-500 ml-1 font-semibold">days</span>
-            </div>
-          </div>
-          <div class="p-2 bg-orange-50 rounded-full text-orange-600">
-            <i data-lucide="clock" class="w-4 h-4"></i>
-          </div>
-        </div>
-
-        <!-- 4. Total Sales Value -->
-        <div class="bg-white p-3.5 rounded-xl border border-gray-200 shadow-sm flex justify-between items-center">
-          <div>
-            <p class="text-[11px] font-medium text-gray-500">Total Sales Value</p>
-            <div class="flex items-center text-base font-bold text-gray-800 mt-1">
-              ₱ <input type="number" id="salesValueInput" oninput="saveCurrentPeriodData()" class="w-20 border-b border-dashed border-gray-300 focus:outline-none focus:border-blue-500 ml-1 font-bold text-sm" placeholder="0.00">
-            </div>
-          </div>
-          <div class="p-2 bg-gray-100 rounded-full text-gray-600">
-            <i data-lucide="trending-up" class="w-4 h-4"></i>
-          </div>
-        </div>
-
-        <!-- 5. Closed Deals -->
-        <div class="bg-white p-3.5 rounded-xl border border-gray-200 shadow-sm flex justify-between items-center">
-          <div>
-            <p class="text-[11px] font-medium text-gray-500">Closed Deals <span class="text-[9px] text-green-600 font-semibold">(AUTO)</span></p>
-            <p id="cardClosedDeals" class="text-lg font-bold text-gray-800 mt-1">0</p>
-          </div>
-          <div class="p-2 bg-green-50 rounded-full text-green-600">
-            <i data-lucide="handshake" class="w-4 h-4"></i>
-          </div>
-        </div>
-
       </div>
 
-      <!-- MAIN DATA TABLE & INSIGHTS SECTION -->
-      <div class="grid grid-cols-1 lg:grid-cols-4 gap-4">
-        
-        <!-- TABLE CONTAINER -->
-        <div class="lg:col-span-3 bg-white border border-gray-200 rounded-xl shadow-sm overflow-hidden">
-          <div class="overflow-x-auto">
-            <table id="performanceTable" class="w-full text-center text-xs border-collapse">
-              <thead>
-                <!-- GROUP HEADERS -->
-                <tr class="bg-gray-50 border-b border-gray-200 font-bold text-gray-700 uppercase">
-                  <th rowspan="2" class="p-2 border-r w-24">DATE</th>
-                  <th colspan="3" class="p-2 border-r bg-green-100 text-green-900">INQUIRY</th>
-                  <th colspan="3" class="p-2 border-r bg-orange-100 text-orange-900">ADS</th>
-                  <th colspan="3" class="p-2 border-r bg-blue-100 text-blue-900">ORGANIC</th>
-                  <th rowspan="2" class="p-2 border-r bg-gray-200 text-gray-800 w-24">CLOSED DEAL <br><span class="text-[10px] text-green-700 font-normal">(AUTO)</span></th>
-                  <th rowspan="2" class="p-2 w-10"></th>
-                </tr>
-                <!-- EDITABLE HEADERS FOR INQUIRY, ADS, AND ORGANIC -->
-                <tr class="border-b border-gray-200 font-semibold text-gray-600">
-                  <!-- INQUIRY EDITABLE HEADERS -->
-                  <th class="p-1 border-r bg-green-50">
-                    <input type="text" id="inqAgent1" oninput="updateAgentName(0, this.value)" class="w-full text-center font-bold bg-transparent text-green-900 focus:outline-blue-500" value="Rose">
-                  </th>
-                  <th class="p-1 border-r bg-green-50">
-                    <input type="text" id="inqAgent2" oninput="updateAgentName(1, this.value)" class="w-full text-center font-bold bg-transparent text-green-900 focus:outline-blue-500" value="Jess">
-                  </th>
-                  <th class="p-1 border-r bg-green-50">
-                    <input type="text" id="inqAgent3" oninput="updateAgentName(2, this.value)" class="w-full text-center font-bold bg-transparent text-green-900 focus:outline-blue-500" value="Marian">
-                  </th>
-
-                  <!-- ADS EDITABLE HEADERS -->
-                  <th class="p-1 border-r bg-orange-50">
-                    <input type="text" id="adsAgent1" oninput="updateAgentName(0, this.value)" class="w-full text-center font-bold bg-transparent text-orange-900 focus:outline-blue-500" value="Rose">
-                  </th>
-                  <th class="p-1 border-r bg-orange-50">
-                    <input type="text" id="adsAgent2" oninput="updateAgentName(1, this.value)" class="w-full text-center font-bold bg-transparent text-orange-900 focus:outline-blue-500" value="Jess">
-                  </th>
-                  <th class="p-1 border-r bg-orange-50">
-                    <input type="text" id="adsAgent3" oninput="updateAgentName(2, this.value)" class="w-full text-center font-bold bg-transparent text-orange-900 focus:outline-blue-500" value="Marian">
-                  </th>
-
-                  <!-- ORGANIC EDITABLE HEADERS -->
-                  <th class="p-1 border-r bg-blue-50">
-                    <input type="text" id="orgAgent1" oninput="updateAgentName(0, this.value)" class="w-full text-center font-bold bg-transparent text-blue-900 focus:outline-blue-500" value="Rose">
-                  </th>
-                  <th class="p-1 border-r bg-blue-50">
-                    <input type="text" id="orgAgent2" oninput="updateAgentName(1, this.value)" class="w-full text-center font-bold bg-transparent text-blue-900 focus:outline-blue-500" value="Jess">
-                  </th>
-                  <th class="p-1 border-r bg-blue-50">
-                    <input type="text" id="orgAgent3" oninput="updateAgentName(2, this.value)" class="w-full text-center font-bold bg-transparent text-blue-900 focus:outline-blue-500" value="Marian">
-                  </th>
-                </tr>
-              </thead>
-              <tbody id="tableBody" class="divide-y divide-gray-200">
-                <!-- Dynamic Entry Rows -->
-              </tbody>
-              <!-- TOTALS FOOTER -->
-              <tfoot class="bg-gray-100 font-bold border-t-2 border-gray-300">
-                <tr>
-                  <td class="p-2 border-r text-left">Global Totals</td>
-                  <td id="tot-inq-1" class="p-2 border-r bg-green-50">0</td>
-                  <td id="tot-inq-2" class="p-2 border-r bg-green-50">0</td>
-                  <td id="tot-inq-3" class="p-2 border-r bg-green-50">0</td>
-
-                  <td id="tot-ads-1" class="p-2 border-r bg-orange-50">0</td>
-                  <td id="tot-ads-2" class="p-2 border-r bg-orange-50">0</td>
-                  <td id="tot-ads-3" class="p-2 border-r bg-orange-50">0</td>
-
-                  <td id="tot-org-1" class="p-2 border-r bg-blue-50">0</td>
-                  <td id="tot-org-2" class="p-2 border-r bg-blue-50">0</td>
-                  <td id="tot-org-3" class="p-2 border-r bg-blue-50">0</td>
-
-                  <td id="tot-closed-deals" class="p-2 border-r bg-gray-200 text-green-800 text-sm">0</td>
-                  <td class="p-2"></td>
-                </tr>
-              </tfoot>
-            </table>
-          </div>
+      <!-- Donut Chart Card -->
+      <div class="section-card">
+        <div class="section-title">
+          <i class="fa-solid fa-chart-donut" style="color: var(--accent-green);"></i>
+          PARCELS
         </div>
-
-        <!-- KEY INSIGHTS SIDEBAR -->
-        <div class="bg-white p-4 border border-gray-200 rounded-xl shadow-sm flex flex-col">
-          <h3 class="text-xs font-bold text-gray-700 uppercase tracking-wider mb-2">Key Insights</h3>
-          <textarea id="keyInsightsInput" oninput="saveCurrentPeriodData()" placeholder="Write notes, performance highlights, or remarks here..." class="w-full flex-1 border border-gray-200 rounded-lg p-2 text-xs focus:outline-none focus:border-blue-500 resize-none min-h-[150px]"></textarea>
+        <div class="chart-box">
+          <canvas id="parcelsChart"></canvas>
         </div>
-
       </div>
+    </div>
 
-    </main>
+  </div>
+
+  <!-- Image Lightbox Modal View -->
+  <div class="image-modal" id="imageModal" onclick="closeImageModal()">
+    <img id="modalImg" src="" alt="Preview">
   </div>
 
   <script>
-    const MONTHS = [
-      "JANUARY", "FEBRUARY", "MARCH", "APRIL", "MAY", "JUNE",
+    Chart.register(ChartDataLabels);
+
+    const months = [
+      "JANUARY", "FEBRUARY", "MARCH", "APRIL", "MAY", "JUNE", 
       "JULY", "AUGUST", "SEPTEMBER", "OCTOBER", "NOVEMBER", "DECEMBER"
     ];
 
+    const defaultProducts = [
+      "Fire Red", "Classic Black", "Ocean Blue", "Emerald Green", "Sunset Orange",
+      "Royal Purple", "Pastel Pink", "Pure White", "Ash Gray", "Navy Blue",
+      "Mustard Yellow", "Maroon Crimson", "Olive Drab"
+    ];
+
     let currentYear = "2026";
-    let currentMonth = "JANUARY";
+    let currentMonthIndex = 0;
+    let parcelsChartInstance = null;
+    let dataStore = {};
 
-    let appStore = JSON.parse(localStorage.getItem('dashboard_store')) || {};
-    let lastActiveAgents = JSON.parse(localStorage.getItem('dashboard_last_agents')) || ["Rose", "Jess", "Marian"];
+    window.onload = function() {
+      loadFromLocalStorage();
+      initChart();
+      renderMonthNav();
+      switchMonth(0);
+    };
 
-    document.addEventListener('DOMContentLoaded', () => {
-      lucide.createIcons();
-      renderMonthTabs();
-      loadPeriodData();
-    });
+    function parseRawNumber(str) {
+      if (typeof str === 'number') return str;
+      if (!str) return 0;
+      const clean = str.toString().replace(/[^0-9.-]+/g, "");
+      return parseFloat(clean) || 0;
+    }
 
-    function renderMonthTabs() {
-      const container = document.getElementById('monthTabsContainer');
-      container.innerHTML = '';
+    function fmtCurrency(num) {
+      return '₱' + (num || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    }
+
+    function unformatInput(inputElem) {
+      const rawVal = parseRawNumber(inputElem.value);
+      inputElem.value = rawVal === 0 ? '' : rawVal;
+    }
+
+    function formatInputCurrency(inputElem, fieldName) {
+      const rawVal = parseRawNumber(inputElem.value);
+      inputElem.value = fmtCurrency(rawVal);
       
-      MONTHS.forEach(month => {
+      const monthData = dataStore[currentYear][currentMonthIndex];
+      monthData[fieldName] = rawVal;
+      calculateSummary();
+    }
+
+    function handleKeyNavigation(event, currentInput) {
+      if (event.key === 'Tab' || event.key === 'Enter') {
+        currentInput.blur();
+        const inputs = Array.from(document.querySelectorAll('input[type="text"], input[type="number"]'));
+        const currentIndex = inputs.indexOf(currentInput);
+        
+        if (event.shiftKey) {
+          if (currentIndex > 0) {
+            event.preventDefault();
+            inputs[currentIndex - 1].focus();
+          }
+        } else {
+          if (currentIndex < inputs.length - 1) {
+            event.preventDefault();
+            inputs[currentIndex + 1].focus();
+          }
+        }
+      }
+    }
+
+    function renderMonthNav() {
+      const nav = document.getElementById('monthNav');
+      nav.innerHTML = '';
+      months.forEach((m, idx) => {
         const btn = document.createElement('button');
-        btn.innerText = month;
-        btn.onclick = () => selectMonth(month);
-        btn.className = `py-1.5 rounded text-[10px] font-bold tracking-wider transition ${
-          currentMonth === month 
-            ? 'bg-cyan-500 text-white shadow' 
-            : 'hover:bg-gray-800 text-gray-400'
-        }`;
-        container.appendChild(btn);
+        btn.className = `month-btn ${idx === currentMonthIndex ? 'active' : ''}`;
+        btn.innerText = m;
+        btn.onclick = () => switchMonth(idx);
+        nav.appendChild(btn);
       });
     }
 
-    function selectMonth(month) {
-      saveCurrentPeriodData();
-      currentMonth = month;
-      renderMonthTabs();
-      loadPeriodData();
-    }
-
-    function changePeriod() {
-      saveCurrentPeriodData();
+    function changeYear() {
       currentYear = document.getElementById('yearSelect').value;
-      loadPeriodData();
+      switchMonth(currentMonthIndex);
     }
 
-    function getPeriodKey() {
-      return `${currentYear}-${currentMonth}`;
-    }
-
-    // UPDATES AGENT NAMES ACROSS ALL SECTIONS & KEEPS THEM IN SYNC
-    function updateAgentName(agentIndex, newName) {
-      const periodKey = getPeriodKey();
+    function switchMonth(index) {
+      currentMonthIndex = index;
+      renderMonthNav();
+      document.getElementById('trackerTitle').innerText = `DAILY RECORD TRACKER (${months[currentMonthIndex]} LOGS)`;
       
-      if (!appStore[periodKey]) {
-        appStore[periodKey] = { agents: [...lastActiveAgents], rows: [] };
-      }
-      if (!appStore[periodKey].agents) {
-        appStore[periodKey].agents = [...lastActiveAgents];
-      }
-
-      // Update in memory
-      appStore[periodKey].agents[agentIndex] = newName;
-      lastActiveAgents[agentIndex] = newName;
-
-      // Sync all input fields for this agent column (Inquiry, Ads, Organic)
-      const inqEl = document.getElementById(`inqAgent${agentIndex + 1}`);
-      const adsEl = document.getElementById(`adsAgent${agentIndex + 1}`);
-      const orgEl = document.getElementById(`orgAgent${agentIndex + 1}`);
-
-      if (inqEl) inqEl.value = newName;
-      if (adsEl) adsEl.value = newName;
-      if (orgEl) orgEl.value = newName;
-
-      saveCurrentPeriodData();
+      ensureDataStructure(currentYear, currentMonthIndex);
+      renderTrackerTable();
+      renderProductInputTable();
+      renderOverallSummaryTable();
+      loadSummaryInputs();
+      calculateSummary();
+      renderImages();
     }
 
-    function loadPeriodData() {
-      document.getElementById('currentPeriodLabel').innerText = `(${currentMonth} - ${currentYear})`;
-      
-      const periodKey = getPeriodKey();
-
-      // Carry over agent names if month data doesn't exist yet
-      if (!appStore[periodKey]) {
-        appStore[periodKey] = {
-          agents: [...lastActiveAgents],
-          adCost: '',
-          fbInquiry: '',
-          adDays: '',
-          salesValue: '',
-          insights: '',
-          rows: [ createEmptyRowData("01-" + currentMonth.substring(0,3)) ]
+    function ensureDataStructure(year, monthIdx) {
+      if (!dataStore[year]) dataStore[year] = {};
+      if (!dataStore[year][monthIdx]) {
+        const daysInMonth = new Date(year, monthIdx + 1, 0).getDate();
+        const logs = [];
+        for (let d = 1; d <= daysInMonth; d++) {
+          const formattedDate = `${year}-${String(monthIdx + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
+          logs.push({
+            date: formattedDate,
+            totalOrders: 0,
+            cancelled: 0,
+            returned: 0,
+            dailyGross: 0,
+            remainingIncome: 0
+          });
+        }
+        dataStore[year][monthIdx] = {
+          logs: logs,
+          discrepancy: 0,
+          tiktokFees: 0,
+          tiktokAdj: 0,
+          adsExpense: 0,
+          liveSeller: 0,
+          images: [],
+          productBatches: [] // Holds { startDate, endDate, items: { "Product Name": qty } }
         };
       }
-
-      const periodData = appStore[periodKey];
-      const agents = periodData.agents || [...lastActiveAgents];
-
-      // Populate Inquiry, Ads, and Organic Headers
-      for (let i = 0; i < 3; i++) {
-        const name = agents[i] || `Agent ${i+1}`;
-        document.getElementById(`inqAgent${i + 1}`).value = name;
-        document.getElementById(`adsAgent${i + 1}`).value = name;
-        document.getElementById(`orgAgent${i + 1}`).value = name;
+      if (!dataStore[year][monthIdx].images) {
+        dataStore[year][monthIdx].images = [];
       }
-
-      document.getElementById('adCostInput').value = periodData.adCost || '';
-      document.getElementById('fbInquiryInput').value = periodData.fbInquiry || '';
-      document.getElementById('adDaysInput').value = periodData.adDays || '';
-      document.getElementById('salesValueInput').value = periodData.salesValue || '';
-      document.getElementById('keyInsightsInput').value = periodData.insights || '';
-
-      renderTableRows(periodData.rows);
-      calculateTotals();
+      if (!dataStore[year][monthIdx].productBatches) {
+        dataStore[year][monthIdx].productBatches = [];
+      }
     }
 
-    function createEmptyRowData(dateLabel = "") {
-      return {
-        id: Date.now() + Math.random(),
-        date: dateLabel,
-        inq1: 0, inq2: 0, inq3: 0,
-        ads1: 0, ads2: 0, ads3: 0,
-        org1: 0, org2: 0, org3: 0,
-        closedDeal: 0
-      };
-    }
-
-    function renderTableRows(rows) {
-      const tbody = document.getElementById('tableBody');
+    /* PRODUCT INPUT & SUMMARY LOGIC */
+    function renderProductInputTable() {
+      const tbody = document.getElementById('productInputTableBody');
       tbody.innerHTML = '';
 
-      rows.forEach((row, idx) => {
-        const sumInq = Number(row.inq1 || 0) + Number(row.inq2 || 0) + Number(row.inq3 || 0);
-        const sumAds = Number(row.ads1 || 0) + Number(row.ads2 || 0) + Number(row.ads3 || 0);
-        const sumOrg = Number(row.org1 || 0) + Number(row.org2 || 0) + Number(row.org3 || 0);
-
-        const trHeader = document.createElement('tr');
-        trHeader.className = "bg-gray-50/70 border-t border-gray-200 font-semibold";
-        trHeader.innerHTML = `
-          <td class="p-1 border-r text-gray-500">
-            <input type="text" value="${row.date}" onchange="updateRowField(${idx}, 'date', this.value)" placeholder="e.g. 25-May" class="w-full text-center bg-transparent focus:outline-none font-bold">
+      defaultProducts.forEach((prodName, i) => {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td>
+            <input type="text" value="${prodName}" class="prod-name-input" data-index="${i}">
           </td>
-          <td colspan="3" class="p-1 border-r text-green-800 bg-green-50/30">${sumInq}</td>
-          <td colspan="3" class="p-1 border-r text-orange-800 bg-orange-50/30">${sumAds}</td>
-          <td colspan="3" class="p-1 border-r text-blue-800 bg-blue-50/30">${sumOrg}</td>
-          <td class="p-1 border-r bg-gray-100 font-bold">${row.closedDeal}</td>
-          <td class="p-1">
-            <button onclick="deleteRow(${idx})" class="text-red-500 hover:text-red-700 p-1">
-              <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
-            </button>
+          <td>
+            <input type="number" min="0" placeholder="0" class="prod-qty-input" data-index="${i}" onkeydown="handleKeyNavigation(event, this)">
           </td>
         `;
+        tbody.appendChild(tr);
+      });
 
-        const trInputs = document.createElement('tr');
-        trInputs.className = "border-b border-gray-200";
-        trInputs.innerHTML = `
-          <td class="p-1 border-r font-medium text-gray-400 text-[11px]">Inputs</td>
-          
-          <td class="p-1 border-r bg-green-50/10"><input type="number" min="0" value="${row.inq1 || 0}" oninput="updateRowField(${idx}, 'inq1', this.value)" class="w-full text-center focus:outline-blue-500 bg-transparent"></td>
-          <td class="p-1 border-r bg-green-50/10"><input type="number" min="0" value="${row.inq2 || 0}" oninput="updateRowField(${idx}, 'inq2', this.value)" class="w-full text-center focus:outline-blue-500 bg-transparent"></td>
-          <td class="p-1 border-r bg-green-50/10"><input type="number" min="0" value="${row.inq3 || 0}" oninput="updateRowField(${idx}, 'inq3', this.value)" class="w-full text-center focus:outline-blue-500 bg-transparent"></td>
+      // Default Date pickers to current month range
+      const mm = String(currentMonthIndex + 1).padStart(2, '0');
+      document.getElementById('prodStartDate').value = `${currentYear}-${mm}-01`;
+      document.getElementById('prodEndDate').value = `${currentYear}-${mm}-07`;
+    }
 
-          <td class="p-1 border-r bg-orange-50/10"><input type="number" min="0" value="${row.ads1 || 0}" oninput="updateRowField(${idx}, 'ads1', this.value)" class="w-full text-center focus:outline-blue-500 bg-transparent"></td>
-          <td class="p-1 border-r bg-orange-50/10"><input type="number" min="0" value="${row.ads2 || 0}" oninput="updateRowField(${idx}, 'ads2', this.value)" class="w-full text-center focus:outline-blue-500 bg-transparent"></td>
-          <td class="p-1 border-r bg-orange-50/10"><input type="number" min="0" value="${row.ads3 || 0}" oninput="updateRowField(${idx}, 'ads3', this.value)" class="w-full text-center focus:outline-blue-500 bg-transparent"></td>
+    function saveProductSalesBatch() {
+      const startDate = document.getElementById('prodStartDate').value;
+      const endDate = document.getElementById('prodEndDate').value;
 
-          <td class="p-1 border-r bg-blue-50/10"><input type="number" min="0" value="${row.org1 || 0}" oninput="updateRowField(${idx}, 'org1', this.value)" class="w-full text-center focus:outline-blue-500 bg-transparent"></td>
-          <td class="p-1 border-r bg-blue-50/10"><input type="number" min="0" value="${row.org2 || 0}" oninput="updateRowField(${idx}, 'org2', this.value)" class="w-full text-center focus:outline-blue-500 bg-transparent"></td>
-          <td class="p-1 border-r bg-blue-50/10"><input type="number" min="0" value="${row.org3 || 0}" oninput="updateRowField(${idx}, 'org3', this.value)" class="w-full text-center focus:outline-blue-500 bg-transparent"></td>
+      if (!startDate || !endDate) {
+        alert('Please select both a Start Date and End Date.');
+        return;
+      }
 
-          <td class="p-1 border-r bg-gray-100 font-bold text-gray-700">
-            <input type="number" min="0" value="${row.closedDeal || 0}" oninput="updateRowField(${idx}, 'closedDeal', this.value)" class="w-full text-center bg-transparent focus:outline-none font-bold text-green-700">
+      const nameInputs = document.querySelectorAll('.prod-name-input');
+      const qtyInputs = document.querySelectorAll('.prod-qty-input');
+      const items = {};
+      let totalQty = 0;
+
+      nameInputs.forEach((input, i) => {
+        const name = input.value.trim();
+        const qty = parseInt(qtyInputs[i].value) || 0;
+        if (name) {
+          items[name] = qty;
+          totalQty += qty;
+        }
+      });
+
+      if (totalQty === 0) {
+        alert('Please enter sales quantities for at least one product.');
+        return;
+      }
+
+      const monthData = dataStore[currentYear][currentMonthIndex];
+      monthData.productBatches.push({ startDate, endDate, items });
+
+      // Clear input quantities
+      qtyInputs.forEach(i => i.value = '');
+
+      renderOverallSummaryTable();
+      autoSaveToLocalStorage();
+      alert(`Recorded sales batch for ${startDate} to ${endDate}!`);
+    }
+
+    function renderOverallSummaryTable() {
+      const monthData = dataStore[currentYear][currentMonthIndex];
+      const totals = {};
+
+      // Initialize defaults
+      defaultProducts.forEach(p => totals[p] = 0);
+
+      // Aggregate all saved batches for this month
+      (monthData.productBatches || []).forEach(batch => {
+        for (const [pName, qty] of Object.entries(batch.items)) {
+          totals[pName] = (totals[pName] || 0) + qty;
+        }
+      });
+
+      // Convert to Array & Sort for Ranking
+      const sorted = Object.keys(totals)
+        .map(name => ({ name, qty: totals[name] }))
+        .sort((a, b) => b.qty - a.qty);
+
+      const tbody = document.getElementById('overallSummaryTableBody');
+      tbody.innerHTML = '';
+
+      sorted.forEach((item, index) => {
+        const rank = index + 1;
+        let badgeClass = 'rank-other';
+        if (rank === 1) badgeClass = 'rank-1';
+        else if (rank === 2) badgeClass = 'rank-2';
+        else if (rank === 3) badgeClass = 'rank-3';
+
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td style="text-align: center;">
+            <span class="rank-badge ${badgeClass}">${rank}</span>
           </td>
-          <td class="p-1"></td>
+          <td style="font-weight: 600;">${item.name}</td>
+          <td style="font-weight: bold; color: var(--accent-blue);">${item.qty.toLocaleString()} pcs</td>
         `;
-
-        tbody.appendChild(trHeader);
-        tbody.appendChild(trInputs);
+        tbody.appendChild(tr);
       });
-
-      lucide.createIcons();
     }
 
-    function updateRowField(index, field, value) {
-      const periodKey = getPeriodKey();
-      if (!appStore[periodKey]) return;
+    function renderTrackerTable() {
+      const monthData = dataStore[currentYear][currentMonthIndex];
+      const tbody = document.getElementById('trackerTableBody');
+      tbody.innerHTML = '';
 
-      appStore[periodKey].rows[index][field] = value;
-      renderTableRows(appStore[periodKey].rows);
-      calculateTotals();
-    }
-
-    function addNewEntryRow() {
-      const periodKey = getPeriodKey();
-      if (!appStore[periodKey]) {
-        appStore[periodKey] = { agents: [...lastActiveAgents], adCost: '', fbInquiry: '', adDays: '', salesValue: '', insights: '', rows: [] };
-      }
-      appStore[periodKey].rows.push(createEmptyRowData());
-      renderTableRows(appStore[periodKey].rows);
-      calculateTotals();
-    }
-
-    function deleteRow(index) {
-      const periodKey = getPeriodKey();
-      if (!appStore[periodKey]) return;
-      appStore[periodKey].rows.splice(index, 1);
-      renderTableRows(appStore[periodKey].rows);
-      calculateTotals();
-    }
-
-    function calculateTotals() {
-      const periodKey = getPeriodKey();
-      const rows = appStore[periodKey] ? appStore[periodKey].rows : [];
-
-      let totals = {
-        inq1: 0, inq2: 0, inq3: 0,
-        ads1: 0, ads2: 0, ads3: 0,
-        org1: 0, org2: 0, org3: 0,
-        closedDeals: 0
-      };
-
-      rows.forEach(r => {
-        totals.inq1 += Number(r.inq1 || 0);
-        totals.inq2 += Number(r.inq2 || 0);
-        totals.inq3 += Number(r.inq3 || 0);
-
-        totals.ads1 += Number(r.ads1 || 0);
-        totals.ads2 += Number(r.ads2 || 0);
-        totals.ads3 += Number(r.ads3 || 0);
-
-        totals.org1 += Number(r.org1 || 0);
-        totals.org2 += Number(r.org2 || 0);
-        totals.org3 += Number(r.org3 || 0);
-
-        totals.closedDeals += Number(r.closedDeal || 0);
+      monthData.logs.forEach((log, i) => {
+        const remainingOrders = Math.max(0, log.totalOrders - log.cancelled - log.returned);
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td>${log.date}</td>
+          <td><input type="number" value="${log.totalOrders}" 
+            onchange="updateLog(${i}, 'totalOrders', this.value)"
+            onkeydown="handleKeyNavigation(event, this)"></td>
+          <td><input type="number" value="${log.cancelled}" 
+            onchange="updateLog(${i}, 'cancelled', this.value)"
+            onkeydown="handleKeyNavigation(event, this)"></td>
+          <td><input type="number" value="${log.returned}" 
+            onchange="updateLog(${i}, 'returned', this.value)"
+            onkeydown="handleKeyNavigation(event, this)"></td>
+          <td>
+            <input type="text" value="${fmtCurrency(log.dailyGross)}" 
+              onfocus="unformatInput(this)" 
+              onblur="updateLogCurrency(${i}, 'dailyGross', this)"
+              onkeydown="handleKeyNavigation(event, this)">
+          </td>
+          <td style="font-weight: bold; color: var(--accent-green); text-align: center;">${remainingOrders}</td>
+          <td>
+            <input type="text" value="${fmtCurrency(log.remainingIncome)}" 
+              onfocus="unformatInput(this)" 
+              onblur="updateLogCurrency(${i}, 'remainingIncome', this)"
+              onkeydown="handleKeyNavigation(event, this)">
+          </td>
+        `;
+        tbody.appendChild(tr);
       });
-
-      document.getElementById('tot-inq-1').innerText = totals.inq1;
-      document.getElementById('tot-inq-2').innerText = totals.inq2;
-      document.getElementById('tot-inq-3').innerText = totals.inq3;
-
-      document.getElementById('tot-ads-1').innerText = totals.ads1;
-      document.getElementById('tot-ads-2').innerText = totals.ads2;
-      document.getElementById('tot-ads-3').innerText = totals.ads3;
-
-      document.getElementById('tot-org-1').innerText = totals.org1;
-      document.getElementById('tot-org-2').innerText = totals.org2;
-      document.getElementById('tot-org-3').innerText = totals.org3;
-
-      document.getElementById('tot-closed-deals').innerText = totals.closedDeals;
-      document.getElementById('cardClosedDeals').innerText = totals.closedDeals;
     }
 
-    function saveCurrentPeriodData() {
-      const periodKey = getPeriodKey();
-      if (!appStore[periodKey]) {
-        appStore[periodKey] = { rows: [] };
+    function updateLog(index, field, value) {
+      const numVal = parseFloat(value) || 0;
+      dataStore[currentYear][currentMonthIndex].logs[index][field] = numVal;
+      calculateSummary();
+    }
+
+    function updateLogCurrency(index, field, inputElem) {
+      const numVal = parseRawNumber(inputElem.value);
+      inputElem.value = fmtCurrency(numVal);
+      dataStore[currentYear][currentMonthIndex].logs[index][field] = numVal;
+
+      if (field === 'dailyGross' && dataStore[currentYear][currentMonthIndex].logs[index].remainingIncome === 0) {
+        dataStore[currentYear][currentMonthIndex].logs[index].remainingIncome = numVal;
+        renderTrackerTable();
       }
 
-      const activeAgents = [
-        document.getElementById('inqAgent1').value,
-        document.getElementById('inqAgent2').value,
-        document.getElementById('inqAgent3').value
+      calculateSummary();
+    }
+
+    function loadSummaryInputs() {
+      const monthData = dataStore[currentYear][currentMonthIndex];
+      document.getElementById('inputDiscrepancy').value = fmtCurrency(monthData.discrepancy);
+      document.getElementById('inputTiktokFees').value = fmtCurrency(monthData.tiktokFees);
+      document.getElementById('inputTiktokAdj').value = fmtCurrency(monthData.tiktokAdj);
+      document.getElementById('inputAdsExpense').value = fmtCurrency(monthData.adsExpense);
+      document.getElementById('inputLiveSeller').value = fmtCurrency(monthData.liveSeller);
+    }
+
+    function calculateSummary() {
+      const monthData = dataStore[currentYear][currentMonthIndex];
+
+      let sumDailyGrossIncome = 0;
+      let sumRemainingIncome = 0;
+      let totalOrdersVolume = 0;
+      let cancelledVolume = 0;
+      let returnedVolume = 0;
+
+      monthData.logs.forEach(log => {
+        sumDailyGrossIncome += log.dailyGross;
+        sumRemainingIncome += log.remainingIncome;
+        totalOrdersVolume += log.totalOrders;
+        cancelledVolume += log.cancelled;
+        returnedVolume += log.returned;
+      });
+
+      const sumRemainingOrders = Math.max(0, totalOrdersVolume - cancelledVolume - returnedVolume);
+      const totalGrossSales = sumRemainingIncome;
+      const totalDeductions = (monthData.tiktokFees || 0) + (monthData.tiktokAdj || 0);
+      const remainingProduction = totalGrossSales - totalDeductions - (monthData.liveSeller || 0);
+
+      const fmtPct = num => (totalGrossSales > 0 ? ((num / totalGrossSales) * 100).toFixed(2) : '0.00') + '%';
+
+      // KPI Top Cards
+      document.getElementById('kpiGrossSales').innerText = fmtCurrency(sumDailyGrossIncome);
+      document.getElementById('kpiTotalOrders').innerText = totalOrdersVolume.toLocaleString();
+      document.getElementById('kpiRemainingOrders').innerText = sumRemainingOrders.toLocaleString();
+      document.getElementById('kpiCancelledVolume').innerText = cancelledVolume.toLocaleString();
+      document.getElementById('kpiReturnedVolume').innerText = returnedVolume.toLocaleString();
+
+      // Breakdown Table
+      document.getElementById('sumGrossSales').innerText = fmtCurrency(totalGrossSales);
+      document.getElementById('pctTiktokFees').innerText = fmtPct(monthData.tiktokFees);
+      document.getElementById('pctTiktokAdj').innerText = fmtPct(monthData.tiktokAdj);
+      document.getElementById('pctAdsExpense').innerText = fmtPct(monthData.adsExpense);
+      
+      document.getElementById('sumTotalDeductions').innerText = fmtCurrency(totalDeductions);
+      document.getElementById('pctTotalDeductions').innerText = fmtPct(totalDeductions);
+
+      document.getElementById('pctLiveSeller').innerText = fmtPct(monthData.liveSeller);
+      
+      document.getElementById('sumProduction').innerText = fmtCurrency(remainingProduction);
+      document.getElementById('pctProduction').innerText = fmtPct(remainingProduction);
+
+      // Financial Breakdown Metrics Bar
+      const safeVolume = sumRemainingOrders > 0 ? sumRemainingOrders : 1;
+      const tiktokPerOrder = totalDeductions / safeVolume;
+      const liveSellerPerOrder = (monthData.liveSeller || 0) / safeVolume;
+      const productionPerOrder = remainingProduction / safeVolume;
+
+      document.getElementById('metricTotalOrders').innerText = sumRemainingOrders.toLocaleString();
+      document.getElementById('metricSalePerParcel').innerText = fmtCurrency(totalGrossSales / safeVolume);
+      document.getElementById('metricTiktokPerOrder').innerText = fmtCurrency(tiktokPerOrder);
+      document.getElementById('metricLiveSellerPerOrder').innerText = fmtCurrency(liveSellerPerOrder);
+      document.getElementById('metricProductionPerOrder').innerText = fmtCurrency(productionPerOrder);
+
+      updateChart(tiktokPerOrder, liveSellerPerOrder, Math.max(0, productionPerOrder));
+      autoSaveToLocalStorage();
+    }
+
+    function initChart() {
+      const ctx = document.getElementById('parcelsChart').getContext('2d');
+      parcelsChartInstance = new Chart(ctx, {
+        type: 'doughnut',
+        data: {
+          labels: ['TIKTOK PER ORDER', 'LIVE SELLER', 'PRODUCTION'],
+          datasets: [{
+            data: [0, 0, 0],
+            backgroundColor: ['#3b82f6', '#ef4444', '#84cc16'],
+            borderWidth: 0
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: {
+              position: 'top',
+              labels: { color: '#9ca3af', font: { size: 10, weight: 'bold' } }
+            },
+            datalabels: {
+              color: '#ffffff',
+              font: { weight: 'bold', size: 12 },
+              formatter: (value, ctx) => {
+                let sum = 0;
+                let dataArr = ctx.chart.data.datasets[0].data;
+                dataArr.map(data => { sum += data; });
+                if (sum === 0) return '0%';
+                let percentage = (value * 100 / sum).toFixed(0) + "%";
+                return percentage;
+              }
+            }
+          },
+          cutout: '55%'
+        }
+      });
+    }
+
+    function updateChart(tiktokVal, sellerVal, productionVal) {
+      if (!parcelsChartInstance) return;
+      const total = tiktokVal + sellerVal + productionVal;
+      if (total === 0) {
+        parcelsChartInstance.data.datasets[0].data = [0, 0, 0];
+      } else {
+        parcelsChartInstance.data.datasets[0].data = [tiktokVal, sellerVal, productionVal];
+      }
+      parcelsChartInstance.update();
+    }
+
+    /* IMAGE UPLOAD LOGIC */
+    function handleImageUpload(event) {
+      const files = Array.from(event.target.files);
+      const currentImages = dataStore[currentYear][currentMonthIndex].images;
+
+      if (currentImages.length + files.length > 5) {
+        alert('Maximum of 5 images allowed per month!');
+        return;
+      }
+
+      files.forEach(file => {
+        const reader = new FileReader();
+        reader.onload = function(e) {
+          if (currentImages.length < 5) {
+            currentImages.push(e.target.result);
+            renderImages();
+            autoSaveToLocalStorage();
+          }
+        };
+        reader.readAsDataURL(file);
+      });
+
+      event.target.value = '';
+    }
+
+    function renderImages() {
+      const currentImages = dataStore[currentYear][currentMonthIndex].images || [];
+      const container = document.getElementById('imageGridContainer');
+      document.getElementById('imageCount').innerText = currentImages.length;
+      
+      container.innerHTML = '';
+      currentImages.forEach((imgSrc, index) => {
+        const card = document.createElement('div');
+        card.className = 'image-card';
+        card.innerHTML = `
+          <img src="${imgSrc}" onclick="viewImage('${imgSrc}')" alt="Attachment ${index + 1}">
+          <button class="delete-img-btn" onclick="deleteImage(${index})"><i class="fa-solid fa-xmark"></i></button>
+        `;
+        container.appendChild(card);
+      });
+    }
+
+    function deleteImage(index) {
+      dataStore[currentYear][currentMonthIndex].images.splice(index, 1);
+      renderImages();
+      autoSaveToLocalStorage();
+    }
+
+    function viewImage(src) {
+      document.getElementById('modalImg').src = src;
+      document.getElementById('imageModal').style.display = 'flex';
+    }
+
+    function closeImageModal() {
+      document.getElementById('imageModal').style.display = 'none';
+    }
+
+    function autoSaveToLocalStorage() {
+      localStorage.setItem('unique_apparel_sales_data', JSON.stringify(dataStore));
+    }
+
+    function saveCurrentData() {
+      autoSaveToLocalStorage();
+      alert('Data and images successfully saved for Year ' + currentYear + ' (' + months[currentMonthIndex] + ')!');
+    }
+
+    function loadFromLocalStorage() {
+      const saved = localStorage.getItem('unique_apparel_sales_data');
+      if (saved) {
+        try {
+          dataStore = JSON.parse(saved);
+        } catch(e) {
+          console.error("Error loading local storage data", e);
+        }
+      }
+    }
+
+    /* EXCEL EXPORT LOGIC */
+    function exportToExcel() {
+      const monthData = dataStore[currentYear][currentMonthIndex];
+      const monthName = months[currentMonthIndex];
+
+      let sheetData = [];
+      sheetData.push([`SUMMARY OF ${monthName}`, "", "", "", "", "", ""]);
+
+      sheetData.push([
+        "DATE", "TOTAL ORDERS", "REMAINING ORDERS", "CANCEL", "RETURN", "INCOME", "RAMAINING INCOME", 
+        "", 
+        "DESCRIPTION", "AMOUNT", "PERCENTAGE", "DISCREPENCY"
+      ]);
+
+      let totOrders = 0, totRemOrders = 0, totCancel = 0, totReturn = 0, totIncome = 0, totRemIncome = 0;
+
+      monthData.logs.forEach((log) => {
+        const remOrd = Math.max(0, log.totalOrders - log.cancelled - log.returned);
+        
+        totOrders += log.totalOrders;
+        totRemOrders += remOrd;
+        totCancel += log.cancelled;
+        totReturn += log.returned;
+        totIncome += log.dailyGross;
+        totRemIncome += log.remainingIncome;
+
+        const dObj = new Date(log.date);
+        const dayStr = dObj.getDate();
+        const monShort = monthName.substring(0, 3);
+        const yrShort = currentYear.substring(2);
+        const dateFormatted = `${dayStr}-${monShort}-${yrShort}`;
+
+        let row = [
+          dateFormatted,
+          log.totalOrders || "",
+          remOrd || 0,
+          log.cancelled || "",
+          log.returned || "",
+          log.dailyGross ? log.dailyGross : "",
+          log.remainingIncome ? log.remainingIncome : 0
+        ];
+
+        sheetData.push(row);
+      });
+
+      sheetData.push([
+        "TOTAL", totOrders, totRemOrders, totCancel, totReturn, totIncome, totRemIncome
+      ]);
+
+      const totalSales = totRemIncome;
+      const tiktokFees = monthData.tiktokFees || 0;
+      const tiktokAdj = monthData.tiktokAdj || 0;
+      const adsExp = monthData.adsExpense || 0;
+      const totalDeduction = tiktokFees + tiktokAdj;
+      const liveSeller = monthData.liveSeller || 0;
+      const remainingProd = totalSales - totalDeduction - liveSeller;
+      const discrepancy = monthData.discrepancy || 0;
+
+      const calcPct = val => totalSales > 0 ? (val / totalSales) : 0;
+
+      const expenseRows = [
+        ["TOTAL SALES", totalSales, calcPct(totalSales), discrepancy],
+        ["TIKTOK FEES", tiktokFees, calcPct(tiktokFees), ""],
+        ["TIKTOK ADJUSTMENT", tiktokAdj, calcPct(tiktokAdj), ""],
+        ["ADS EXPENSE", adsExp, calcPct(adsExp), ""],
+        ["TOTAL DEDUCTION", totalDeduction, calcPct(totalDeduction), ""],
+        ["LIVE SELLER PAYROLL", liveSeller, calcPct(liveSeller), ""],
+        ["REMAINING FOR PRODCUTIONS", remainingProd, calcPct(remainingProd), ""]
       ];
 
-      appStore[periodKey].agents = activeAgents;
-      lastActiveAgents = activeAgents;
+      expenseRows.forEach((expRow, idx) => {
+        let targetRowIdx = idx + 2;
+        while (sheetData.length <= targetRowIdx) sheetData.push([]);
+        while (sheetData[targetRowIdx].length < 8) sheetData[targetRowIdx].push("");
+        sheetData[targetRowIdx].push(...expRow);
+      });
 
-      appStore[periodKey].adCost = document.getElementById('adCostInput').value;
-      appStore[periodKey].fbInquiry = document.getElementById('fbInquiryInput').value;
-      appStore[periodKey].adDays = document.getElementById('adDaysInput').value;
-      appStore[periodKey].salesValue = document.getElementById('salesValueInput').value;
-      appStore[periodKey].insights = document.getElementById('keyInsightsInput').value;
+      const safeParcels = totRemOrders > 0 ? totRemOrders : 1;
+      const salesPerParcel = totalSales / safeParcels;
+      const tiktokPerParcel = totalDeduction / safeParcels;
+      const sellerPerParcel = liveSeller / safeParcels;
+      const prodPerParcel = remainingProd / safeParcels;
 
-      localStorage.setItem('dashboard_store', JSON.stringify(appStore));
-      localStorage.setItem('dashboard_last_agents', JSON.stringify(lastActiveAgents));
-    }
+      const parcelHeaderIdx = 10;
+      while (sheetData.length <= parcelHeaderIdx + 1) sheetData.push([]);
 
-    function saveAllData() {
-      saveCurrentPeriodData();
-      alert(`Data successfully saved for ${currentMonth} - ${currentYear}!`);
-    }
+      while (sheetData[parcelHeaderIdx].length < 8) sheetData[parcelHeaderIdx].push("");
+      sheetData[parcelHeaderIdx].push("TOTAL ORDERS", "SALES PER PARCELS", "TIKTOK", "LIVE SELLER", "PRODUCTION");
 
-    function exportToExcel() {
+      while (sheetData[parcelHeaderIdx + 1].length < 8) sheetData[parcelHeaderIdx + 1].push("");
+      sheetData[parcelHeaderIdx + 1].push(totRemOrders, salesPerParcel, tiktokPerParcel, sellerPerParcel, prodPerParcel);
+
+      // Export Product Ranking to Excel
+      sheetData.push([], ["OVERALL PRODUCT RANKING"], ["RANK", "PRODUCT NAME", "TOTAL SOLD"]);
+      const totals = {};
+      defaultProducts.forEach(p => totals[p] = 0);
+      (monthData.productBatches || []).forEach(batch => {
+        for (const [pName, qty] of Object.entries(batch.items)) {
+          totals[pName] = (totals[pName] || 0) + qty;
+        }
+      });
+
+      const sorted = Object.keys(totals)
+        .map(name => ({ name, qty: totals[name] }))
+        .sort((a, b) => b.qty - a.qty);
+
+      sorted.forEach((item, idx) => {
+        sheetData.push([idx + 1, item.name, item.qty]);
+      });
+
+      const ws = XLSX.utils.aoa_to_sheet(sheetData);
+
+      ws['!cols'] = [
+        { wch: 12 }, { wch: 14 }, { wch: 18 }, { wch: 10 }, { wch: 10 }, { wch: 14 }, { wch: 18 },
+        { wch: 5 }, { wch: 28 }, { wch: 16 }, { wch: 14 }, { wch: 16 }, { wch: 14 }
+      ];
+
       const wb = XLSX.utils.book_new();
-      const periodKey = getPeriodKey();
-      const periodData = appStore[periodKey] || { rows: [] };
-      const agents = periodData.agents || lastActiveAgents;
-
-      let summaryData = [{
-        "Ad Cost": periodData.adCost,
-        "FB Inquiry Total": periodData.fbInquiry,
-        "Ad Run Days": periodData.adDays,
-        "Total Sales Value": periodData.salesValue,
-        "Key Insights": periodData.insights
-      }];
-
-      let dataForExcel = periodData.rows.map(r => ({
-        "Date": r.date,
-        [`Inquiry (${agents[0]})`]: r.inq1,
-        [`Inquiry (${agents[1]})`]: r.inq2,
-        [`Inquiry (${agents[2]})`]: r.inq3,
-        [`Ads (${agents[0]})`]: r.ads1,
-        [`Ads (${agents[1]})`]: r.ads2,
-        [`Ads (${agents[2]})`]: r.ads3,
-        [`Organic (${agents[0]})`]: r.org1,
-        [`Organic (${agents[1]})`]: r.org2,
-        [`Organic (${agents[2]})`]: r.org3,
-        "Closed Deals": r.closedDeal
-      }));
-
-      const wsSummary = XLSX.utils.json_to_sheet(summaryData);
-      const wsDetails = XLSX.utils.json_to_sheet(dataForExcel);
-
-      XLSX.utils.book_append_sheet(wb, wsSummary, "Summary");
-      XLSX.utils.book_append_sheet(wb, wsDetails, "Daily Breakdowns");
-      
-      XLSX.writeFile(wb, `Performance_Report_${currentMonth}_${currentYear}.xlsx`);
+      XLSX.utils.book_append_sheet(wb, ws, `${monthName}_Summary`);
+      XLSX.writeFile(wb, `Sales_Summary_${monthName}_${currentYear}.xlsx`);
     }
   </script>
 </body>
